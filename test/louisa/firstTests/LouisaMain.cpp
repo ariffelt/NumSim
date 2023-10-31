@@ -1,3 +1,5 @@
+#include "LouisaSettings.h"
+
 #include <iostream>
 #include <cstdlib>
 
@@ -17,5 +19,10 @@ int main(int argc, char *argv[])
   // print message
   std::cout << "Filename: \"" << filename << "\"" << std::endl;
 
+  //
+  loadFromFile(filename);
+  //void loadFromFile(const std::string filename);
+
   return EXIT_SUCCESS;
 }
+
