@@ -11,6 +11,6 @@ sudo apt install mesa-libGL-devel (?)
 
 conda install -c conda-forge pugixml
 
-conda install -c conda-forge vtk
+sudo apt install libvtk7-dev
 
 #ich musste außerdem in den Ordner /usr/lib einen FakeLink zu libGL.so erstellen, das war bei mir wo anders drin, das geht mit ln -s ...
