@@ -1,5 +1,5 @@
 # necessary for installation, for making cmake & make run:
-# incomplete list:
+# incomplete list - order might not work like this, I did a ton of installing, updating, uninstalling,...
 
 conda install tree
 
