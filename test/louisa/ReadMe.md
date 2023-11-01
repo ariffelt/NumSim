@@ -5,8 +5,10 @@ conda install tree
 
 conda install cmake
 
-conda install -c conda-forge vtk
-
 sudo apt install libglu1-mesa-dev
 
 sudo apt install mesa-libGL-devel
+
+conda install -c conda-forge pugixml
+
+conda install -c conda-forge vtk
