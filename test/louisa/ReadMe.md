@@ -1,6 +1,6 @@
 # necessary for installation, for making cmake & make run:
 # incomplete list - order might not work like this, I did a ton of installing, updating, uninstalling,...
-
+# for me, vtk only worked in a python 2.7 environment, so I had made a new one with conda create --name NumSimEnv2 python=2.7
 conda install tree
 
 conda install cmake
