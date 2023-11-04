@@ -1,0 +1,13 @@
+/home/maureen/NumSim/gitNumSim/NumSim/test/maureen/cmakeTests/build/CMakeFiles/edit_cache.dir
+/home/maureen/NumSim/gitNumSim/NumSim/test/maureen/cmakeTests/build/CMakeFiles/rebuild_cache.dir
+/home/maureen/NumSim/gitNumSim/NumSim/test/maureen/cmakeTests/build/CMakeFiles/list_install_components.dir
+/home/maureen/NumSim/gitNumSim/NumSim/test/maureen/cmakeTests/build/CMakeFiles/install.dir
+/home/maureen/NumSim/gitNumSim/NumSim/test/maureen/cmakeTests/build/CMakeFiles/install/local.dir
+/home/maureen/NumSim/gitNumSim/NumSim/test/maureen/cmakeTests/build/CMakeFiles/install/strip.dir
+/home/maureen/NumSim/gitNumSim/NumSim/test/maureen/cmakeTests/build/src/CMakeFiles/numsim.dir
+/home/maureen/NumSim/gitNumSim/NumSim/test/maureen/cmakeTests/build/src/CMakeFiles/edit_cache.dir
+/home/maureen/NumSim/gitNumSim/NumSim/test/maureen/cmakeTests/build/src/CMakeFiles/rebuild_cache.dir
+/home/maureen/NumSim/gitNumSim/NumSim/test/maureen/cmakeTests/build/src/CMakeFiles/list_install_components.dir
+/home/maureen/NumSim/gitNumSim/NumSim/test/maureen/cmakeTests/build/src/CMakeFiles/install.dir
+/home/maureen/NumSim/gitNumSim/NumSim/test/maureen/cmakeTests/build/src/CMakeFiles/install/local.dir
+/home/maureen/NumSim/gitNumSim/NumSim/test/maureen/cmakeTests/build/src/CMakeFiles/install/strip.dir
