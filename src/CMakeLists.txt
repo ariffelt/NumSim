@@ -7,7 +7,6 @@ project(numsim)
 # Also specify the source files.
 set(PROJECT_FILES
     settings/settings.cpp
-    output_writer/write_paraview_output.cpp
     storage/array2d.cpp
 )
 
