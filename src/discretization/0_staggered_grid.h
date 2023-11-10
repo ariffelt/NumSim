@@ -73,6 +73,9 @@ public:
     //! last valid index for u in y direction
     int uJEnd() const;
 
+    //! size of u
+    std::array<int, 2> uSize() const;
+
     //! first valid index for v in x direction
     int vIBegin() const;
 
@@ -85,6 +88,9 @@ public:
     //! last valid index for v in y direction
     int vJEnd() const;
 
+    //! size of v
+    std::array<int, 2> vSize() const;
+
     //! first valid index for p in x direction
     int pIBegin() const;
 
@@ -96,6 +102,12 @@ public:
 
     //! last valid index for p in y direction
     int pJEnd() const;
+
+    //! size of p
+    std::array<int, 2> pSize() const;
+
+    //! size of rhs
+    std::array<int, 2> rhsSize() const;
 
 protected:
     const std::array<int, 2> nCells_;
