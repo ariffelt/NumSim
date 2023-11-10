@@ -2,6 +2,13 @@
 
 #include <cassert>
 
+//! default constructor
+FieldVariable::FieldVariable() : Array2D({1, 1}),
+                                 origin_({0.0, 0.0}),
+                                 meshWidth_({1.0, 1.0})
+{
+}
+
 FieldVariable::FieldVariable(std::array<int, 2> size,
                              std::array<double, 2> origin,
                              std::array<double, 2> meshWidth) : Array2D(size),
@@ -26,7 +33,7 @@ double FieldVariable::interpolateAt(double x, double y) const
     if (j == size_[1] - 1)
         j--;
 
-    // TODO: add eps?
+    //! TODO: add eps?
 
     // get the relative position of the point (x,y) within the cell, + 1 because of cell indices definition
     double relativeX = (x - origin_[0]) / meshWidth_[0] + 1 - i;
@@ -37,7 +44,7 @@ double FieldVariable::interpolateAt(double x, double y) const
     assert(j >= 1 && j <= size_[1] - 1);
 
     // get the values at the four corners of the cell
-    // TODO: check if dereferencing is necessary
+    //! TODO: check if dereferencing is necessary
     double bottomLeft = (*this)(i, j);
     double bottomRight = (*this)(i + 1, j);
     double topLeft = (*this)(i, j + 1);
