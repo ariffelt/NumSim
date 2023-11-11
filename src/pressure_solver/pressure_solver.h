@@ -17,6 +17,9 @@ protected:
     //! set the boundary values to account for homogenous Neumann boundary conditions, this has to be called after every iteration
     void setBoundaryValues();
 
+    //! compute the residual 
+    double getResidual();
+
     //! object holding the needed field variables for rhs and p
     std::shared_ptr< Discretization > 	discretization_;
  
