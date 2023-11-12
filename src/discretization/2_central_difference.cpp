@@ -2,7 +2,7 @@
 
 # include <cassert>
 
-#include<cmath>
+# include <cmath> //pow
 
 //!Constructor
 CentralDifferences::CentralDifferences(std::array<int, 2> nCells, std::array<double, 2> meshWidth) :
