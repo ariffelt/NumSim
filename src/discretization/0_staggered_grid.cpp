@@ -1,5 +1,5 @@
 #include "discretization/0_staggered_grid.h"
-
+//! TODO: Check wheter cassert counts as third party library, which is not allowed according to rule 1 
 #include <cassert>
 
 //! Constructor
