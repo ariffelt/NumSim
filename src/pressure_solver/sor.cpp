@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <iostream>
 
 SOR::SOR(std::shared_ptr<Discretization> discretization,
          double epsilon,
@@ -9,6 +10,12 @@ SOR::SOR(std::shared_ptr<Discretization> discretization,
          double omega) : PressureSolver(discretization, epsilon, maximumNumberOfIterations),
                          omega_(omega)
 {
+    assert(omega >= 1);
+    assert(omega < 2);
+    if (omega != 2/(1 + sin(M_PI * discretization_->dx())) && omega != 2/(1 + sin(M_PI * discretization_->dy())))
+    {
+        std::cout << "WARNING: omega is not the optimal value for SOR." << std::endl;
+    }
 }
 
 void SOR::solve()
