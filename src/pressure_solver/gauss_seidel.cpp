@@ -2,14 +2,14 @@
 
 #include <cassert>
 
-Gauss_Seidel::Gauss_Seidel(std::shared_ptr<Discretization> discretization,
+GaussSeidel::GaussSeidel(std::shared_ptr<Discretization> discretization,
                            double epsilon,
-                           int maximumNumberOfIterations) : Pressure_Solver(discretization, epsilon, maximumNumberOfIterations)
+                           int maximumNumberOfIterations) : PressureSolver(discretization, epsilon, maximumNumberOfIterations)
 {
     
 }
 
-void Gauss_Seidel::solve()
+void GaussSeidel::solve()
 {
     const double hx2 = discretization_->meshWidth_[0];
     const double hy2 = discretization_->meshWidth_[1];
