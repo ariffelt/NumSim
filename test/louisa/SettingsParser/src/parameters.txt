@@ -1,0 +1,10 @@
+# settings
+endTime=1.5          # duration of the simulation
+
+re = 1000            # Reynolds number
+
+# um zu kompilieren: 
+# g++ -c LouisaSettings.cpp -o LouisaSettings.o - das brauch es scheinbar nicht mal
+# g++ LouisaMain.cpp LouisaSettings.o -o louisa3
+# um auszuführen:
+# ./louisa3 parameters.txt

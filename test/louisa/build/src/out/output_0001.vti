@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<VTKFile type="ImageData" version="0.1" byte_order="LittleEndian" header_type="UInt32" compressor="vtkZLibDataCompressor">
+  <ImageData WholeExtent="0 9 0 9 0 0" Origin="0 0 0" Spacing="1 1 1">
+  <Piece Extent="0 9 0 9 0 0">
+    <PointData>
+      <DataArray type="Float64" Name="pressure" format="binary" RangeMin="0" RangeMax="18">
+        AQAAAACAAAAgAwAAKAAAAA==eJxjYKAJcKAuLUBlWoLKtAKVaRUq0xpUpnWoTBtQmTaiGg0ACp0h1Q==
+      </DataArray>
+    </PointData>
+    <CellData>
+    </CellData>
+  </Piece>
+  </ImageData>
+</VTKFile>
