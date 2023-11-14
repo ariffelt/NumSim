@@ -1,4 +1,5 @@
-#include "settings.h"
+#include "settings/settings.h"
+#include "computation/computation.h"
 
 int main(int argc, char *argv[])
 {
@@ -23,6 +24,12 @@ int main(int argc, char *argv[])
 
     // display all settings on console
     settings.printSettings();
+
+    // create computation object and run simulation
+    //TODO: in initialize settings wiederverwenden
+    Computation computation = Computation();
+    computation.initialize(settings);
+    computation.runSimulation();
 
     return EXIT_SUCCESS;
 }
