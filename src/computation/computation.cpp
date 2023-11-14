@@ -6,7 +6,7 @@ Computation::Computation()
     // nothing to do
 }
 
-void Computation::initialize(int argc, char *argv[])
+void Computation::initialize(Settings settings)
 {
     if (settings_.pressureSolver == "GaussSeidel")
     {

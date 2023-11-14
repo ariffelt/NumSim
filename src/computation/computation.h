@@ -14,7 +14,7 @@ public:
     //! constructor TODO
     Computation();
 
-    void initialize(int argc, char *argv[]);
+    void initialize(Settings settings);
  
     //! run the whole simulation until tend
     void runSimulation();
