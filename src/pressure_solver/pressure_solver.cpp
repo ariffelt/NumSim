@@ -27,6 +27,7 @@ double PressureSolver::getResidual()
             res += (d2pdx2 + d2pdy2 - discretization_->rhs(i, j)) * (d2pdx2 + d2pdy2 - discretization_->rhs(i, j));
         }
     }
+
     return res / (((discretization_->pIEnd() + 1) - discretization_->pIBegin()) * ((discretization_->pJEnd() + 1) * discretization_->pJBegin()));
 }
 
