@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     // create computation object and run simulation
     //TODO: in initialize settings wiederverwenden
     Computation computation = Computation();
-    computation.initialize(settings);
+    computation.initialize(argc, argv);
     computation.runSimulation();
 
     return EXIT_SUCCESS;

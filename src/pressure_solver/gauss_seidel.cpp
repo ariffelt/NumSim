@@ -3,10 +3,9 @@
 #include <cassert>
 
 GaussSeidel::GaussSeidel(std::shared_ptr<Discretization> discretization,
-                           double epsilon,
-                           int maximumNumberOfIterations) : PressureSolver(discretization, epsilon, maximumNumberOfIterations)
+                         double epsilon,
+                         int maximumNumberOfIterations) : PressureSolver(discretization, epsilon, maximumNumberOfIterations)
 {
-    
 }
 
 void GaussSeidel::solve()
@@ -29,7 +28,7 @@ void GaussSeidel::solve()
         {
             for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd() - 1; j++)
             {
-                    discretization_ -> p(i,j) = prefactor * ((discretization_ -> p(i-1,j) + discretization_ -> p(i+1,j))/(hx2) + (discretization_ -> p(i,j-1) + discretization_ -> p(i,j+1))/(hy2)) - discretization_ -> rhs(i,j);
+                discretization_->p(i, j) = prefactor * ((discretization_->p(i - 1, j) + discretization_->p(i + 1, j)) / (hx2) + (discretization_->p(i, j - 1) + discretization_->p(i, j + 1)) / (hy2)) - discretization_->rhs(i, j);
             }
         }
         // Update boundary values such that Neumann Boundary conditions are fulfilled
@@ -41,3 +40,4 @@ void GaussSeidel::solve()
         // update residual
         res2 = getResidual();
     }
+}

@@ -218,5 +218,5 @@ std::array<int, 2> StaggeredGrid::pSize() const
 //! size of rhs
 std::array<int, 2> StaggeredGrid::rhsSize() const
 {
-    return {nCells_[0] + 1, nCells_[1] + 1};
+    return {nCells_[0] + 2, nCells_[1] + 2};
 }
