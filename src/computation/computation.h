@@ -15,7 +15,7 @@ public:
     //! I think we do not even need a constructor, the default constructor is sufficient
     // Computation();
 
-    void initialize(Settings settings);
+    void initialize(int argc, char* argv[]);
  
     //! run the whole simulation until tend
     void runSimulation();

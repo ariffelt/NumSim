@@ -121,35 +121,35 @@ void Settings::loadFromFile(std::string filename)
         {
             alpha = atof(value.c_str());
         }
-        else if (parameterName == "dirichletBcBottomU")
+        else if (parameterName == "dirichletBcBottomU" || parameterName == "dirichletBottomX")
         {
             dirichletBcBottom[0] = atof(value.c_str());
         }
-        else if (parameterName == "dirichletBcBottomV")
+        else if (parameterName == "dirichletBcBottomV" || parameterName == "dirichletBottomY")
         {
             dirichletBcBottom[1] = atof(value.c_str());
         }
-        else if (parameterName == "dirichletBcTopU")
+        else if (parameterName == "dirichletBcTopU" || parameterName == "dirichletTopX")
         {
             dirichletBcTop[0] = atof(value.c_str());
         }
-        else if (parameterName == "dirichletBcTopV")
+        else if (parameterName == "dirichletBcTopV" || parameterName == "dirichletTopY")
         {
             dirichletBcTop[1] = atof(value.c_str());
         }
-        else if (parameterName == "dirichletBcLeftU")
+        else if (parameterName == "dirichletBcLeftU" || parameterName == "dirichletLeftX")
         {
             dirichletBcLeft[0] = atof(value.c_str());
         }
-        else if (parameterName == "dirichletBcLeftV")
+        else if (parameterName == "dirichletBcLeftV" || parameterName == "dirichletLeftY")
         {
             dirichletBcLeft[1] = atof(value.c_str());
         }
-        else if (parameterName == "dirichletBcRightU")
+        else if (parameterName == "dirichletBcRightU" || parameterName == "dirichletRightX")
         {
             dirichletBcRight[0] = atof(value.c_str());
         }
-        else if (parameterName == "dirichletBcRightV")
+        else if (parameterName == "dirichletBcRightV" || parameterName == "dirichletRightY")  
         {
             dirichletBcRight[1] = atof(value.c_str());
         }

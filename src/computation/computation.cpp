@@ -1,6 +1,8 @@
 #include "computation/computation.h"
 #include "pressure_solver/gauss_seidel.h"
 #include "pressure_solver/sor.h"
+#include "discretization/2_donor_cell.h"
+#include "discretization/2_central_differences.h"
 
 #include <cassert>
 
@@ -12,10 +14,11 @@
     // nothing to do
 } */
 
-void Computation::initialize(Settings settings)
+void Computation::initialize(int argc, char *argv[])
 {
     //! load and print settings
-    settings_ = settings;
+    settings_ = Settings();
+    settings_.loadFromFile(argv[1]);
     settings_.printSettings();
 
     //! compute the meshWidth from the physical size and the number of cells
@@ -25,11 +28,11 @@ void Computation::initialize(Settings settings)
     //! initialize discretization
     if (settings_.useDonorCell)
     {
-        discretization_ = std::make_shared<Discretization>(settings_.nCells, meshWidth_, settings_.alpha);
+        discretization_ = std::make_shared<DonorCell>(settings_.nCells, meshWidth_, settings_.alpha);
     }
     else
     {
-        discretization_ = std::make_shared<Discretization>(settings_.nCells, meshWidth_);
+        discretization_ = std::make_shared<CentralDifferences>(settings_.nCells, meshWidth_);
     }
 
     //! initialize the solver
@@ -59,21 +62,23 @@ void Computation::runSimulation()
 {
     double t = 0;
     while (t < settings_.endTime)
-    {
+    {   
+        std::cout << "starting t = " << t << std::endl;
         applyBoundaryValues();
         computeTimeStepWidth();
-        computePreliminaryVelocities();
-        computeRightHandSide();
-        computePressure();
-        computeVelocities();
-        t += dt_;
-        outputWriterParaview_->writeFile(t);
-        outputWriterText_->writeFile(t);
-        // decrease time step width in last time step, s.t. the end time will be reached exactly
         if (t + dt_ > settings_.endTime)
         {
             dt_ = settings_.endTime - t;
         }
+        t += dt_;
+        computePreliminaryVelocities();
+        computeRightHandSide();
+        computePressure();
+        computeVelocities();
+        std::cout << "dt = " << dt_ << std::endl;
+        outputWriterParaview_->writeFile(t);
+        outputWriterText_->writeFile(t);
+        // decrease time step width in last time step, s.t. the end time will be reached exactly
     }
 }
 //! Compute the time step width dt from maximum velocities.
@@ -99,7 +104,7 @@ void Computation::computeTimeStepWidth()
     //! TODO: ensure somewhere that tau<1
     //! because of the scaling with the security factor tau < 1, a subtraction of a small value,
     // to ensure dt smaller and not smaller/equal than required, is not necessary
-    double dt = settings_.tau * std::min(dt_diffusion, dt_convection);
+    dt_ = settings_.tau * std::min(dt_diffusion, dt_convection);
 }
 
 //! Set velocity boundary values for u, v, F and G
@@ -212,10 +217,10 @@ void Computation::applyBoundaryValues()
     //! compute the right hand side of the Poisson equation for the pressure
     void Computation::computeRightHandSide()
     {
-        //! TODO: check whether we actually start with rhs=0 to rhsSize
-        for (int i = 0; i <= discretization_->rhsSize()[0]; i++)
+        //! TODO: < or <= or <-1? imaginary points
+        for (int i = 1; i < discretization_->rhsSize()[0]; i++)
         {
-            for (int j = 0; j <= discretization_->rhsSize()[1]; j++)
+            for (int j = 1; j < discretization_->rhsSize()[1]; j++)
             {
                 double change_F = ((discretization_->f(i, j) - discretization_->f(i - 1, j)) / discretization_->dx());
                 double change_G = ((discretization_->g(i, j) - discretization_->g(i - 1, j)) / discretization_->dx());
