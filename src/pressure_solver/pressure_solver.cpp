@@ -27,10 +27,26 @@ double PressureSolver::getResidual()
             res += (d2pdx2 + d2pdy2 - discretization_->rhs(i, j)) * (d2pdx2 + d2pdy2 - discretization_->rhs(i, j));
         }
     }
-
-    return res / (((discretization_->pIEnd() + 1) - discretization_->pIBegin()) * ((discretization_->pJEnd() + 1) * discretization_->pJBegin()));
+    
+    return res / (discretization_->nCells()[0] * discretization_->nCells()[1]);
 }
 
+//! TODO: not too sure about this one
+void PressureSolver::setBoundaryValues()
+{
+    for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); i++)
+    {
+        discretization_->p(i, discretization_->pJEnd()) = discretization_->p(i, discretization_->pJEnd() - 1);
+        discretization_->p(i, discretization_->pJBegin()) = discretization_->p(i, discretization_->pJBegin() + 1);
+    }
+    for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); j++)
+    {
+        discretization_->p(discretization_->pIEnd(), j) = discretization_->p(discretization_->pIEnd() - 1, j);
+        discretization_->p(discretization_->pIBegin(), j) = discretization_->p(discretization_->pIBegin() + 1, j);
+    }
+}
+
+/*
 void PressureSolver::setBoundaryValues()
 {
     for (int i = discretization_->pIBegin(); i < discretization_->pIEnd(); i++)
@@ -44,3 +60,4 @@ void PressureSolver::setBoundaryValues()
         discretization_->p(discretization_->pIBegin(), j) = discretization_->p(discretization_->pIBegin() + 1, j);
     }
 }
+*/
