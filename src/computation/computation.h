@@ -11,8 +11,9 @@
 class Computation
 {
 public:
-    //! constructor TODO
-    Computation();
+    //! constructor TODO:
+    //! I think we do not even need a constructor, the default constructor is sufficient
+    // Computation();
 
     void initialize(Settings settings);
  
