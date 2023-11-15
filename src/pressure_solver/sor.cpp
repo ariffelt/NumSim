@@ -55,4 +55,5 @@ void SOR::solve()
         // update residual
         res2 = getResidual();
     }
+    std::cout << "SOR iterations: " << iteration << std::endl;
 }
