@@ -1,4 +1,5 @@
 #include "pressure_solver/gauss_seidel.h"
+#include <iostream>
 
 #include <cassert>
 
@@ -12,7 +13,7 @@ void GaussSeidel::solve()
 {
     const double hx2 = discretization_->dx() * discretization_->dx();
     const double hy2 = discretization_->dy() * discretization_->dy();
-    const double prefactor = hx2 * hy2 / (2 * (hx2 + hy2));
+    const double prefactor = hx2 * hy2 / (2.0 * (hx2 + hy2));
 
     // compute initial residual
     double res02 = getResidual();
@@ -28,7 +29,7 @@ void GaussSeidel::solve()
         {
             for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd() - 1; j++)
             {
-                discretization_->p(i, j) = prefactor * ((discretization_->p(i - 1, j) + discretization_->p(i + 1, j)) / (hx2) + (discretization_->p(i, j - 1) + discretization_->p(i, j + 1)) / (hy2)) - discretization_->rhs(i, j);
+                discretization_->p(i, j) = prefactor * ((discretization_->p(i - 1, j) + discretization_->p(i + 1, j)) / (hx2) + (discretization_->p(i, j - 1) + discretization_->p(i, j + 1)) / (hy2) - discretization_->rhs(i, j));
             }
         }
         // Update boundary values such that Neumann Boundary conditions are fulfilled
@@ -40,4 +41,5 @@ void GaussSeidel::solve()
         // update residual
         res2 = getResidual();
     }
+    std::cout << "Gauss-Seidel iterations: " << iteration << std::endl;
 }

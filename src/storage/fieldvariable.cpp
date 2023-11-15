@@ -24,8 +24,8 @@ FieldVariable::FieldVariable(std::array<int, 2> size,
 double FieldVariable::interpolateAt(double x, double y) const
 {
     // get the indices of the cell that contains the point (x,y), + 1 because of cell indices definition
-    int i = (int)((x - origin_[0]) / meshWidth_[0] + 1);
-    int j = (int)((y - origin_[1]) / meshWidth_[1] + 1);
+    int i = (int)((x - origin_[0]) / meshWidth_[0]);
+    int j = (int)((y - origin_[1]) / meshWidth_[1]);
 
     // check for indices on top or right boundary
     if (i == size_[0] - 1)
@@ -36,12 +36,12 @@ double FieldVariable::interpolateAt(double x, double y) const
     //! TODO: add eps?
 
     // get the relative position of the point (x,y) within the cell, + 1 because of cell indices definition
-    double relativeX = (x - origin_[0]) / meshWidth_[0] + 1 - i;
-    double relativeY = (y - origin_[1]) / meshWidth_[1] + 1 - j;
+    double relativeX = (x - origin_[0]) / meshWidth_[0] - i;
+    double relativeY = (y - origin_[1]) / meshWidth_[1] - j;
 
     // check if indices are in range
-    assert(i >= 1 && i <= size_[0] - 1);
-    assert(j >= 1 && j <= size_[1] - 1);
+    assert(i >= 0 && i <= size_[0] - 1);
+    assert(j >= 0 && j <= size_[1] - 1);
 
     // get the values at the four corners of the cell
     //! TODO: check if dereferencing is necessary

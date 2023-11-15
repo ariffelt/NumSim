@@ -20,6 +20,8 @@ public:
     //! run the whole simulation until tend
     void runSimulation();
 
+    void testBC();
+
 private:    
     //! compute the time step width dt from maximum velocities
     void computeTimeStepWidth();
