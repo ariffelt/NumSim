@@ -115,7 +115,7 @@ void Settings::loadFromFile(std::string filename)
         }
         else if (parameterName == "useDonorCell")
         {
-            useDonorCell = (value.c_str() == "true");
+            useDonorCell = (value == "true" ? true : false);
         }
         else if (parameterName == "alpha")
         {
@@ -167,7 +167,7 @@ void Settings::loadFromFile(std::string filename)
         }
         else if (parameterName == "maximumNumberOfIterations")
         {
-            maximumNumberOfIterations = atoi(value.c_str());
+            maximumNumberOfIterations =  static_cast<int>(atof(value.c_str()));
         }
         else
         {
