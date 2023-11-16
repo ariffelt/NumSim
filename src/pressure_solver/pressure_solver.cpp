@@ -15,14 +15,14 @@ double PressureSolver::getResidual()
     double res = 0;
     const double hx2 = discretization_->dx() * discretization_->dx();
     const double hy2 = discretization_->dy() * discretization_->dy();
-    for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd() - 1; i++)
+    for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd(); i++)
     {
-        for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd() - 1; j++)
+        for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd(); j++)
         {
             // Second order derivative of p in direction x
-            double d2pdx2 = (discretization_->p(i - 1, j) - 2 * discretization_->p(i, j) + discretization_->p(i + 1, j)) / (hx2);
+            double d2pdx2 = (discretization_->p(i - 1, j) - 2.0 * discretization_->p(i, j) + discretization_->p(i + 1, j)) / (hx2);
             // Second order derivative of p in direction y
-            double d2pdy2 = (discretization_->p(i, j - 1) - 2 * discretization_->p(i, j) + discretization_->p(i, j + 1)) / (hy2);
+            double d2pdy2 = (discretization_->p(i, j - 1) - 2.0 * discretization_->p(i, j) + discretization_->p(i, j + 1)) / (hy2);
             // compute residual
             res += (d2pdx2 + d2pdy2 - discretization_->rhs(i, j)) * (d2pdx2 + d2pdy2 - discretization_->rhs(i, j));
         }

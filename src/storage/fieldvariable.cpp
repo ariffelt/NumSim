@@ -2,13 +2,6 @@
 
 #include <cassert>
 
-//! default constructor
-FieldVariable::FieldVariable() : Array2D({1, 1}),
-                                 origin_({0.0, 0.0}),
-                                 meshWidth_({1.0, 1.0})
-{
-}
-
 FieldVariable::FieldVariable(std::array<int, 2> size,
                              std::array<double, 2> origin,
                              std::array<double, 2> meshWidth) : Array2D(size),

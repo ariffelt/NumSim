@@ -13,7 +13,6 @@ class FieldVariable //: public Array2D
 {
 public:
     //! constructor
-    FieldVariable();
     FieldVariable(std::array<int, 2> size, std::array<double, 2> origin, std::array<double, 2> meshWidth);
 
     //! get the value at the Cartesian coordinate (x,y). The value is linearly interpolated between stored points.
