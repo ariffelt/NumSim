@@ -37,9 +37,9 @@ void SOR::solve()
     while (res2 >= epsilon2 * res02 && iteration < maximumNumberOfIterations_)
     {
         // Implement SOR for inner points
-        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd() - 1; i++)
+        for (int i = discretization_->pIBegin() + 1; i <= discretization_->pIEnd() - 1; i++)
         {
-            for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd() - 1; j++)
+            for (int j = discretization_->pJBegin() + 1; j <= discretization_->pJEnd() - 1; j++)
             {
                 double px = (discretization_->p(i - 1, j) + discretization_->p(i + 1, j)) / (hx2);
                 double py = (discretization_->p(i, j - 1) + discretization_->p(i, j + 1)) / (hy2);
