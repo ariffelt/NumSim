@@ -4,7 +4,7 @@
 
 #include "storage/fieldvariable.h"
 
-class StaggeredGrid : public FieldVariable
+class StaggeredGrid
 {
 public:
     //! constructor
