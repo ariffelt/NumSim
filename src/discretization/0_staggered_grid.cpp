@@ -23,11 +23,11 @@ StaggeredGrid::StaggeredGrid(std::array<int, 2> nCells, std::array<double, 2> me
 
     //! VAR2
     u_(uSize(), {0.0, -meshWidth[1] / 2.0}, meshWidth),
-    v_(vSize(), {-meshWidth[0] / 2.0, 0}, meshWidth),
+    v_(vSize(), {-meshWidth[0] / 2.0, 0.0}, meshWidth),
     p_(pSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth),
     rhs_(rhsSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth),
     f_(uSize(), {0.0, -meshWidth[1] / 2.0}, meshWidth),
-    g_(vSize(), {-meshWidth[0] / 2.0, 0}, meshWidth)
+    g_(vSize(), {-meshWidth[0] / 2.0, 0.0}, meshWidth)
 {
     assert(nCells[0] > 0);
     assert(nCells[1] > 0);

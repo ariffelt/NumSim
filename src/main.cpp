@@ -23,14 +23,13 @@ int main(int argc, char *argv[])
     settings.loadFromFile(filename);
 
     // display all settings on console
-    settings.printSettings();
+    //settings.printSettings();
 
     // create computation object and run simulation
     //TODO: in initialize settings wiederverwenden
     Computation computation = Computation();
     computation.initialize(argc, argv);
     computation.runSimulation();
-    //computation.testBC();
 
     return EXIT_SUCCESS;
 }

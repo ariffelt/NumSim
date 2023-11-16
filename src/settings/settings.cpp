@@ -26,7 +26,7 @@ void Settings::loadFromFile(std::string filename)
             break;
         
         // print line
-        std::cout << "line " << lineNo << ": " << line << std::endl;
+        //std::cout << "line " << lineNo << ": " << line << std::endl;
 
         // remove whitespace at beginning of line (if there is any)
         while (line[0] == ' ' || line[0] == '\t')
