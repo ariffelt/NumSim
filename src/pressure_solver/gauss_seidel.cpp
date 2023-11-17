@@ -23,7 +23,7 @@ void GaussSeidel::solve()
     const double epsilon2 = epsilon_ * epsilon_;
     double res2 = res02;
 
-    while (res2 >= epsilon2 * res02 && iteration < maximumNumberOfIterations_)
+    while (res2 >= epsilon2 && iteration < maximumNumberOfIterations_)
     { // Implement GS for inner points
         for (int i = discretization_->pIBegin() + 1; i <= discretization_->pIEnd() - 1; i++)
         {

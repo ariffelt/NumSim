@@ -33,7 +33,7 @@ double CentralDifferences::computeDuvDx(int i, int j) const
     const double v_half_step_right = (v(i + 1, j) + v(i, j)) / 2.0;
     const double v_half_step_left = (v(i - 1, j) + v(i, j)) / 2.0;
 
-    return ((v_half_step_right * u_half_step_top) - (v_half_step_left * u_half_step_up_step_left) / (dx()));
+    return ((v_half_step_right * u_half_step_top) - (v_half_step_left * u_half_step_up_step_left)) / dx();
 }
 
 //! compute the 1st derivative ∂ (uv) / ∂y
@@ -44,5 +44,5 @@ double CentralDifferences::computeDuvDy(int i, int j) const
     const double v_half_step_right = (v(i + 1, j) + v(i, j)) / 2.0;
     const double v_half_step_right_step_down = (v(i + 1, j - 1) + v(i, j - 1)) / 2.0;
 
-    return ((v_half_step_right * u_half_step_top) - (v_half_step_right_step_down * u_half_step_down) / (dy()));
+    return ((v_half_step_right * u_half_step_top) - (v_half_step_right_step_down * u_half_step_down)) / dy();
 }

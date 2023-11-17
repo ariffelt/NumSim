@@ -101,8 +101,8 @@ void Computation::computeTimeStepWidth()
         for (int j = 0; j < uSize[1]; j++)
         {
             //! possible because the grid for u and v have the same dimensions in all directions
-            maxU = std::max(maxU, std::abs(discretization_->u(i, j)));
-            maxV = std::max(maxV, std::abs(discretization_->v(i, j)));
+            maxU = std::max(maxU, std::fabs(discretization_->u(i, j)));
+            maxV = std::max(maxV, std::fabs(discretization_->v(i, j)));
         }
     }
     double dt_convection = std::min(discretization_->dx() / maxU, discretization_->dy() / maxV);
