@@ -24,7 +24,7 @@ double DonorCell::computeDu2Dx(int i, int j) const
     const double u_speed_diff_to_left = (u(i - 1, j) - u(i, j)) / 2.0;
 
     //! compute donor cell part of the equation
-    const double donor_cell = (abs(u_half_step_right) * u_speed_diff_to_right - abs(u_half_step_left) * u_speed_diff_to_left) / dx();
+    const double donor_cell = (fabs(u_half_step_right) * u_speed_diff_to_right - fabs(u_half_step_left) * u_speed_diff_to_left)/ dx();
 
     return central_difference + alpha_ * donor_cell;
 }
@@ -44,7 +44,7 @@ double DonorCell::computeDv2Dy(int i, int j) const
     const double v_speed_diff_to_bottom = (v(i, j - 1) - v(i, j)) / 2.0;
 
     //! compute donor cell part of the equation
-    const double donor_cell = (abs(v_half_step_top) * v_speed_diff_to_top - abs(v_half_step_bottom) * v_speed_diff_to_bottom) / dy();
+    const double donor_cell = (fabs(v_half_step_top) * v_speed_diff_to_top - fabs(v_half_step_bottom) * v_speed_diff_to_bottom)/ dy();
 
     return central_difference + alpha_ * donor_cell;
 }
@@ -66,7 +66,7 @@ double DonorCell::computeDuvDx(int i, int j) const
     const double v_speed_diff_to_left = (v(i - 1, j) - v(i, j)) / 2.0;
 
     //! compute donor cell part of the equation
-    const double donor_cell = (abs(u_half_step_top) * v_speed_diff_to_right - abs(u_half_step_up_step_left) * v_speed_diff_to_left) / dx();
+    const double donor_cell = (fabs(u_half_step_top) * v_speed_diff_to_right - fabs(u_half_step_up_step_left) * v_speed_diff_to_left)/ dx();
 
     return central_difference + alpha_ * donor_cell;
 }
@@ -88,7 +88,7 @@ double DonorCell::computeDuvDy(int i, int j) const
     const double u_speed_diff_to_down = (u(i, j - 1) - u(i, j)) / 2.0;
 
     //! compute donor cell part of the equation
-    const double donor_cell = (abs(v_half_step_right) * u_speed_diff_to_top - abs(v_half_step_right_step_down) * u_speed_diff_to_down) / dy();
+    const double donor_cell = (fabs(v_half_step_right) * u_speed_diff_to_top - fabs(v_half_step_right_step_down) * u_speed_diff_to_down)/ dy();
 
     return central_difference + alpha_ * donor_cell;
 }

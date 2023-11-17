@@ -68,8 +68,9 @@ void Computation::runSimulation()
 {
     double t = 0.0;
     while (t < settings_.endTime)
-    {
-        std::cout << "starting t = " << t << std::endl;
+    {   
+        //std::cout << "starting t = " << t << std::endl;
+
         applyBoundaryValues();
         computeTimeStepWidth();
         // decrease time step width in last time step, s.t. the end time will be reached exactly
@@ -82,7 +83,7 @@ void Computation::runSimulation()
         computeRightHandSide();
         computePressure();
         computeVelocities();
-        std::cout << "dt = " << dt_ << std::endl;
+        //std::cout << "dt = " << dt_ << std::endl;
         outputWriterParaview_->writeFile(t);
         outputWriterText_->writeFile(t);
     }
@@ -101,8 +102,8 @@ void Computation::computeTimeStepWidth()
         for (int j = 0; j < uSize[1]; j++)
         {
             //! possible because the grid for u and v have the same dimensions in all directions
-            maxU = std::max(maxU, std::abs(discretization_->u(i, j)));
-            maxV = std::max(maxV, std::abs(discretization_->v(i, j)));
+            maxU = std::max(maxU, std::fabs(discretization_->u(i, j)));
+            maxV = std::max(maxV, std::fabs(discretization_->v(i, j)));
         }
     }
     double dt_convection = std::min(discretization_->dx() / maxU, discretization_->dy() / maxV);

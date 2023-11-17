@@ -34,7 +34,7 @@ void SOR::solve()
     double res2 = res02;
 
     // solve the system of the Poisson equation for pressure with the SOR method
-    while (res2 >= epsilon2 * res02 && iteration < maximumNumberOfIterations_)
+    while (res2 >= epsilon2 && iteration < maximumNumberOfIterations_)
     {
         // Implement SOR for inner points
         for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd(); i++)
@@ -55,5 +55,5 @@ void SOR::solve()
         // update residual
         res2 = getResidual();
     }
-    std::cout << "SOR iterations: " << iteration << std::endl;
+    //std::cout << "SOR iterations: " << iteration << std::endl;
 }
