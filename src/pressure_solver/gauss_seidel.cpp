@@ -41,5 +41,5 @@ void GaussSeidel::solve()
         // update residual
         res2 = getResidual();
     }
-    std::cout << "Gauss-Seidel iterations: " << iteration << std::endl;
+    //std::cout << "Gauss-Seidel iterations: " << iteration << std::endl;
 }

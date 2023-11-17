@@ -69,7 +69,7 @@ void Computation::runSimulation()
     double t = 0.0;
     while (t < settings_.endTime)
     {   
-        std::cout << "starting t = " << t << std::endl;
+        //std::cout << "starting t = " << t << std::endl;
         applyBoundaryValues();
         computeTimeStepWidth();
         // decrease time step width in last time step, s.t. the end time will be reached exactly
@@ -82,7 +82,7 @@ void Computation::runSimulation()
         computeRightHandSide();
         computePressure();
         computeVelocities();
-        std::cout << "dt = " << dt_ << std::endl;
+        //std::cout << "dt = " << dt_ << std::endl;
         outputWriterParaview_->writeFile(t);
         outputWriterText_->writeFile(t);
     }
