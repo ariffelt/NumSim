@@ -15,43 +15,43 @@ public:
     //! I think we do not even need a constructor, the default constructor is sufficient
     // Computation();
 
-    void initialize(int argc, char* argv[]);
- 
+    void initialize(int argc, char *argv[]);
+
     //! run the whole simulation until tend
     void runSimulation();
 
     void testBC();
 
-private:    
+private:
     //! compute the time step width dt from maximum velocities
     void computeTimeStepWidth();
 
-    //! set boundary values of u and v to correct values   
+    //! set boundary values of u and v to correct values
     void applyBoundaryValues();
 
-    //! compute the preliminary velocities, F and G    
+    //! compute the preliminary velocities, F and G
     void computePreliminaryVelocities();
 
-    //! compute the right hand side of the Poisson equation for the pressure    
+    //! compute the right hand side of the Poisson equation for the pressure
     void computeRightHandSide();
 
-    //! solve the Poisson equation for the pressure    
+    //! solve the Poisson equation for the pressure
     void computePressure();
 
-    //! compute the new velocities, u,v, from the preliminary velocities, F,G and the pressure, p    
+    //! compute the new velocities, u,v, from the preliminary velocities, F,G and the pressure, p
     void computeVelocities();
-    
+
     Settings settings_;
-    
+
     std::shared_ptr<Discretization> discretization_;
-    
+
     std::unique_ptr<PressureSolver> pressureSolver_;
-    
+
     std::unique_ptr<OutputWriterParaview> outputWriterParaview_;
-    
+
     std::unique_ptr<OutputWriterText> outputWriterText_;
-    
+
     std::array<double, 2> meshWidth_;
-    
-    double 	dt_;
+
+    double dt_;
 };
