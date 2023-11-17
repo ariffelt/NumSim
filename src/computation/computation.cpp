@@ -204,7 +204,7 @@ void Computation::applyBoundaryValues()
         for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1; i++)
         {
             //! TODO: evtl uJEnd()-1? Weil die oberen Werte zum wegwerfen sind? - changed
-            for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd() - 1 ; j++)
+            for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd(); j++)
             {
                 double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2uDx2(i, j) + discretization_->computeD2uDy2(i, j));
                 double convectionTerms = discretization_->computeDu2Dx(i, j) + discretization_->computeDuvDy(i, j);
@@ -215,7 +215,7 @@ void Computation::applyBoundaryValues()
         //! compute preliminary G
         //! TODO: evtl vIEnd()-1? Weil die rechten Werte zum wegwerfen sind? - changed
         //changed
-        for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd() - 1; i++)
+        for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd(); i++)
         {
             for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1; j++)
             {
@@ -238,7 +238,7 @@ void Computation::applyBoundaryValues()
             for (int j = 1; j < discretization_->rhsSize()[1] - 1; j++)
             {
                 double change_F = ((discretization_->f(i, j) - discretization_->f(i - 1, j)) / discretization_->dx());
-                double change_G = ((discretization_->g(i, j) - discretization_->g(i - 1, j)) / discretization_->dx());
+                double change_G = ((discretization_->g(i, j) - discretization_->g(i, j - 1)) / discretization_->dy());
                 discretization_->rhs(i, j) = (change_F + change_G) / dt_;
             }
         }

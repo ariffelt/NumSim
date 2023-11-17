@@ -9,7 +9,7 @@
  *  with specified mesh width.
  */
 
-class FieldVariable //: public Array2D
+class FieldVariable : public Array2D
 {
 public:
     //! constructor
