@@ -24,9 +24,9 @@ void Settings::loadFromFile(std::string filename)
         // at the end of the file break for loop
         if (file.eof())
             break;
-        
+
         // print line
-        //std::cout << "line " << lineNo << ": " << line << std::endl;
+        // std::cout << "line " << lineNo << ": " << line << std::endl;
 
         // remove whitespace at beginning of line (if there is any)
         while (line[0] == ' ' || line[0] == '\t')
@@ -37,7 +37,7 @@ void Settings::loadFromFile(std::string filename)
         // if first character is a '#', skip line (line[0] == '#')
         if (line[0] == '#')
             continue;
-        
+
         // if line does not contain a '=' sign, skip line
         if (line.find_first_of("=") == std::string::npos)
             continue;
@@ -149,7 +149,7 @@ void Settings::loadFromFile(std::string filename)
         {
             dirichletBcRight[0] = atof(value.c_str());
         }
-        else if (parameterName == "dirichletBcRightV" || parameterName == "dirichletRightY")  
+        else if (parameterName == "dirichletBcRightV" || parameterName == "dirichletRightY")
         {
             dirichletBcRight[1] = atof(value.c_str());
         }
@@ -167,7 +167,7 @@ void Settings::loadFromFile(std::string filename)
         }
         else if (parameterName == "maximumNumberOfIterations")
         {
-            maximumNumberOfIterations =  static_cast<int>(atof(value.c_str()));
+            maximumNumberOfIterations = static_cast<int>(atof(value.c_str()));
         }
         else
         {
@@ -175,21 +175,21 @@ void Settings::loadFromFile(std::string filename)
         }
     }
 
-    #ifndef NDEBUG
-        // only run this code in debug target
-        std::cout << "lots of inefficient but informative output . . ." << std::endl;
-    #endif
+#ifndef NDEBUG
+    // only run this code in debug target
+    std::cout << "lots of inefficient but informative output . . ." << std::endl;
+#endif
 }
 
 void Settings::printSettings()
 {
     std::cout << "Settings:" << std::endl
-        << "  physicalSize: " << physicalSize[0] << " x " << physicalSize[1] << ", nCells: " << nCells[0] << " x " << nCells[1] << std::endl
-        << "  re: " << re << ", endTime: " << endTime << ", tau: " << tau << ", maximumDt: " << maximumDt << ", g: (" << g[0] << "," << g[1] << ")" << std::endl
-        << "  useDonorCell: " << useDonorCell << ", alpha: " << alpha << std::endl
-        << "  dirichletBc: bottom: (" << dirichletBcBottom[0] << "," << dirichletBcBottom[1] << ")"
-        << ", top: (" << dirichletBcTop[0] << "," << dirichletBcTop[1] << ")"
-        << ", left: (" << dirichletBcLeft[0] << "," << dirichletBcLeft[1] << ")"
-        << ", right: (" << dirichletBcRight[0] << "," << dirichletBcRight[1] << ")" << std::endl
-        << "  pressureSolver: " << pressureSolver << ", omega: " << omega << ", epsilon: " << epsilon << ", maximumNumberOfIterations: " << maximumNumberOfIterations << std::endl;
+              << "  physicalSize: " << physicalSize[0] << " x " << physicalSize[1] << ", nCells: " << nCells[0] << " x " << nCells[1] << std::endl
+              << "  re: " << re << ", endTime: " << endTime << ", tau: " << tau << ", maximumDt: " << maximumDt << ", g: (" << g[0] << "," << g[1] << ")" << std::endl
+              << "  useDonorCell: " << useDonorCell << ", alpha: " << alpha << std::endl
+              << "  dirichletBc: bottom: (" << dirichletBcBottom[0] << "," << dirichletBcBottom[1] << ")"
+              << ", top: (" << dirichletBcTop[0] << "," << dirichletBcTop[1] << ")"
+              << ", left: (" << dirichletBcLeft[0] << "," << dirichletBcLeft[1] << ")"
+              << ", right: (" << dirichletBcRight[0] << "," << dirichletBcRight[1] << ")" << std::endl
+              << "  pressureSolver: " << pressureSolver << ", omega: " << omega << ", epsilon: " << epsilon << ", maximumNumberOfIterations: " << maximumNumberOfIterations << std::endl;
 }

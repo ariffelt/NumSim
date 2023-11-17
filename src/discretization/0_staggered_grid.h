@@ -25,7 +25,6 @@ public:
     //! get a reference to field variable p
     const FieldVariable &p() const;
 
-
     //! access value of u in element (i,j)
     double u(int i, int j) const;
 
@@ -53,13 +52,11 @@ public:
     //! access value of G in element (i,j)
     double &g(int i, int j);
 
-
     //! get the mesh width in x direction
     double dx() const;
 
     //! get the mesh width in y direction
     double dy() const;
-
 
     //! first valid index for u in x direction
     int uIBegin() const;

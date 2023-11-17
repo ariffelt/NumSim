@@ -70,6 +70,7 @@ void Computation::runSimulation()
     while (t < settings_.endTime)
     {   
         //std::cout << "starting t = " << t << std::endl;
+
         applyBoundaryValues();
         computeTimeStepWidth();
         // decrease time step width in last time step, s.t. the end time will be reached exactly
@@ -106,7 +107,6 @@ void Computation::computeTimeStepWidth()
         }
     }
     double dt_convection = std::min(discretization_->dx() / maxU, discretization_->dy() / maxV);
-    //! TODO: ensure somewhere that tau<1
     //! because of the scaling with the security factor tau < 1, a subtraction of a small value,
     // to ensure dt smaller and not smaller/equal than required, is not necessary
     assert(settings_.tau < 1);
@@ -117,7 +117,7 @@ void Computation::computeTimeStepWidth()
 void Computation::applyBoundaryValues()
 {
     //! set the u boundary values for bottom and top first, as for corner cases, the left and right border should be used
-    //changed
+    // changed
     for (int i = discretization_->uIBegin(); i < discretization_->uIEnd(); i++)
     {
         //! u boundary values bottom, assuming inhomogenous Dirichlet conditions
@@ -172,7 +172,7 @@ void Computation::applyBoundaryValues()
         //! F boundary values left
         discretization_->f(discretization_->uIBegin(), j) = discretization_->u(discretization_->uIBegin(), j);
         //! F boundary values right
-        //changed (?)
+        // changed (?)
         discretization_->f(discretization_->uIEnd() - 1, j) = discretization_->u(discretization_->uIEnd() - 1, j);
     }
 
@@ -182,7 +182,7 @@ void Computation::applyBoundaryValues()
         //! G boundary values bottom
         discretization_->g(i, discretization_->vJBegin()) = discretization_->v(i, discretization_->vJBegin());
         //! G boundary values top
-         discretization_->g(i, discretization_->vJEnd() - 1) = discretization_->v(i, discretization_->vJEnd() - 1);
+        discretization_->g(i, discretization_->vJEnd() - 1) = discretization_->v(i, discretization_->vJEnd() - 1);
     }
 
     //! set the G boundary values for left and right side now
@@ -194,81 +194,81 @@ void Computation::applyBoundaryValues()
         discretization_->g(discretization_->vIEnd(), j) = discretization_->v(discretization_->vIEnd(), j);
     }
 }
-    //! compute the preliminary velocities, F and G
-    void Computation::computePreliminaryVelocities()
-    {
-        //! compute the preliminary velocities only for the inside of the area, as on the direct boundary, they are constantly 0
+//! compute the preliminary velocities, F and G
+void Computation::computePreliminaryVelocities()
+{
+    //! compute the preliminary velocities only for the inside of the area, as on the direct boundary, they are constantly 0
 
-        // ! compute preliminary F
-        //changed
-        for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1; i++)
+    // ! compute preliminary F
+    // changed
+    for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1; i++)
+    {
+        //! TODO: evtl uJEnd()-1? Weil die oberen Werte zum wegwerfen sind? - changed
+        for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd() - 1; j++)
         {
-            //! TODO: evtl uJEnd()-1? Weil die oberen Werte zum wegwerfen sind? - changed
-            for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd(); j++)
-            {
-                double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2uDx2(i, j) + discretization_->computeD2uDy2(i, j));
-                double convectionTerms = discretization_->computeDu2Dx(i, j) + discretization_->computeDuvDy(i, j);
-                //! TODO: check whether we update the g
-                discretization_->f(i, j) = discretization_->u(i, j) + dt_ * (diffusionTerms - convectionTerms + settings_.g[0]);
-            }
+            double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2uDx2(i, j) + discretization_->computeD2uDy2(i, j));
+            double convectionTerms = discretization_->computeDu2Dx(i, j) + discretization_->computeDuvDy(i, j);
+            //! TODO: check whether we update the g
+            discretization_->f(i, j) = discretization_->u(i, j) + dt_ * (diffusionTerms - convectionTerms + settings_.g[0]);
         }
-        //! compute preliminary G
-        //! TODO: evtl vIEnd()-1? Weil die rechten Werte zum wegwerfen sind? - changed
-        //changed
-        for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd(); i++)
+    }
+    //! compute preliminary G
+    //! TODO: evtl vIEnd()-1? Weil die rechten Werte zum wegwerfen sind? - changed
+    // changed
+    for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd() - 1; i++)
+    {
+        for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1; j++)
         {
-            for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1; j++)
-            {
-                double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2vDx2(i, j) + discretization_->computeD2vDy2(i, j));
-                double convectionTerms = discretization_->computeDuvDx(i, j) + discretization_->computeDv2Dy(i, j);
+            double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2vDx2(i, j) + discretization_->computeD2vDy2(i, j));
+            double convectionTerms = discretization_->computeDuvDx(i, j) + discretization_->computeDv2Dy(i, j);
 
-                discretization_->g(i, j) = discretization_->v(i, j) + dt_ * (diffusionTerms - convectionTerms + settings_.g[1]);
-            }
+            discretization_->g(i, j) = discretization_->v(i, j) + dt_ * (diffusionTerms - convectionTerms + settings_.g[1]);
         }
     }
+}
 
-    //! compute the right hand side of the Poisson equation for the pressure
-    void Computation::computeRightHandSide()
+//! compute the right hand side of the Poisson equation for the pressure
+void Computation::computeRightHandSide()
+{
+    //! TODO: < or <= or <-1? imaginary points
+    // changed
+    for (int i = 1; i < discretization_->rhsSize()[0] - 1; i++)
     {
-        //! TODO: < or <= or <-1? imaginary points
-        //changed
-        for (int i = 1; i < discretization_->rhsSize()[0] - 1; i++)
+        // changed
+        for (int j = 1; j < discretization_->rhsSize()[1] - 1; j++)
         {
-            //changed
-            for (int j = 1; j < discretization_->rhsSize()[1] - 1; j++)
-            {
-                double change_F = ((discretization_->f(i, j) - discretization_->f(i - 1, j)) / discretization_->dx());
-                double change_G = ((discretization_->g(i, j) - discretization_->g(i, j - 1)) / discretization_->dy());
-                discretization_->rhs(i, j) = (change_F + change_G) / dt_;
-            }
+            double change_F = ((discretization_->f(i, j) - discretization_->f(i - 1, j)) / discretization_->dx());
+            double change_G = ((discretization_->g(i, j) - discretization_->g(i, j - 1)) / discretization_->dy());
+            discretization_->rhs(i, j) = (change_F + change_G) / dt_;
         }
     }
-    /**
-     * Compute the pressure by solving the Poisson equation for the pressure.
-     */
-    void Computation::computePressure()
+}
+/**
+ * Compute the pressure by solving the Poisson equation for the pressure.
+ */
+void Computation::computePressure()
+{
+    pressureSolver_->solve();
+}
+
+void Computation::computeVelocities()
+{
+    // compute final u
+    // xhanged
+    for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1; i++)
     {
-        pressureSolver_->solve();
-    }
-    
-    void Computation::computeVelocities()
-    {
-        // compute final u
-        //xhanged
-        for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1; i++)
+        for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd(); j++)
         {
-            for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd() ; j++)
-            {
-                discretization_->u(i, j) = discretization_->f(i, j) - dt_ * (discretization_->p(i + 1, j) - discretization_->p(i, j)) / discretization_->dx();
-            }
-        }
-        // compute final v
-        for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd(); i++)
-        {
-            //changed
-            for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1; j++)
-            {
-                discretization_->v(i, j) = discretization_->g(i, j) - dt_ * (discretization_->p(i, j + 1) - discretization_->p(i, j)) / discretization_->dy();
-            }
+            discretization_->u(i, j) = discretization_->f(i, j) - dt_ * (discretization_->p(i + 1, j) - discretization_->p(i, j)) / discretization_->dx();
         }
     }
+    // compute final v
+    for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd(); i++)
+    {
+        // changed
+        for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1; j++)
+        {
+            discretization_->v(i, j) = discretization_->g(i, j) - dt_ * (discretization_->p(i, j + 1) - discretization_->p(i, j)) / discretization_->dy();
+        }
+    }
+}

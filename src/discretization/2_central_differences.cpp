@@ -14,6 +14,7 @@ double CentralDifferences::computeDu2Dx(int i, int j) const
 {
     const double u_half_step_left = (u(i - 1, j) + u(i, j)) / 2.0;
     const double u_half_step_right = (u(i, j) + u(i + 1, j)) / 2.0;
+
     return (pow(u_half_step_right, 2) - pow(u_half_step_left, 2)) / dx();
 }
 
@@ -22,6 +23,7 @@ double CentralDifferences::computeDv2Dy(int i, int j) const
 {
     const double v_half_step_bottom = (v(i, j - 1) + v(i, j)) / 2.0;
     const double v_half_step_top = (v(i, j) + v(i, j + 1)) / 2.0;
+
     return (pow(v_half_step_top, 2) - pow(v_half_step_bottom, 2)) / dy();
 }
 
