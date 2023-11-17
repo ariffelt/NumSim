@@ -1,33 +1,32 @@
 #include "discretization/0_staggered_grid.h"
-//! TODO: Check wheter cassert counts as third party library, which is not allowed according to rule 1 
+//! TODO: Check wheter cassert counts as third party library, which is not allowed according to rule 1
 #include <cassert>
 
 //! Constructor
-StaggeredGrid::StaggeredGrid(std::array<int, 2> nCells, std::array<double, 2> meshWidth) : 
-    nCells_(nCells),
-    meshWidth_(meshWidth),
-    //! initialize field variables
-    //! CHECK: Is origin (the 2nd argument) the physical origin, or index origin?
-    //! CHECK: Do we need meshwidth/2 as rhs's last argument?
-    //! CHECK: do we need as origin {meshwidth[0],meshwidh[1]/2} - VAR1
-    // or VAR2: {0,-meshwidth[1]/2}? So are we considering all u's or just the u's in the computation region?
-    //! CHECK: same for v,p,rhs,f,g
+StaggeredGrid::StaggeredGrid(std::array<int, 2> nCells, std::array<double, 2> meshWidth) : nCells_(nCells),
+                                                                                           meshWidth_(meshWidth),
+                                                                                           //! initialize field variables
+                                                                                           //! CHECK: Is origin (the 2nd argument) the physical origin, or index origin?
+                                                                                           //! CHECK: Do we need meshwidth/2 as rhs's last argument?
+                                                                                           //! CHECK: do we need as origin {meshwidth[0],meshwidh[1]/2} - VAR1
+                                                                                           // or VAR2: {0,-meshwidth[1]/2}? So are we considering all u's or just the u's in the computation region?
+                                                                                           //! CHECK: same for v,p,rhs,f,g
 
-    //! VAR1
-    // u_(uSize(), {meshWidth[0], meshWidth[1]/2.0}, meshWidth),
-    // v_(vSize(), {meshWidth[0]/2.0, meshWidth[1]}, meshWidth),
-    // p_(pSize(), {meshWidth[0]/2.0, meshWidth[1]/2.0}, meshWidth),
-    // rhs_(rhsSize(), {meshWidth[0]/2.0, meshWidth[1]/2.0}, meshWidth),
-    // f_(uSize(), {meshWidth[0], meshWidth[1]/2.0}, meshWidth),
-    // g_(vSize(), {meshWidth[0]/2.0, meshWidth[1]}, meshWidth)
+                                                                                           //! VAR1
+                                                                                           // u_(uSize(), {meshWidth[0], meshWidth[1]/2.0}, meshWidth),
+                                                                                           // v_(vSize(), {meshWidth[0]/2.0, meshWidth[1]}, meshWidth),
+                                                                                           // p_(pSize(), {meshWidth[0]/2.0, meshWidth[1]/2.0}, meshWidth),
+                                                                                           // rhs_(rhsSize(), {meshWidth[0]/2.0, meshWidth[1]/2.0}, meshWidth),
+                                                                                           // f_(uSize(), {meshWidth[0], meshWidth[1]/2.0}, meshWidth),
+                                                                                           // g_(vSize(), {meshWidth[0]/2.0, meshWidth[1]}, meshWidth)
 
-    //! VAR2
-    u_(uSize(), {0.0, -meshWidth[1] / 2.0}, meshWidth),
-    v_(vSize(), {-meshWidth[0] / 2.0, 0.0}, meshWidth),
-    p_(pSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth),
-    rhs_(rhsSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth),
-    f_(uSize(), {0.0, -meshWidth[1] / 2.0}, meshWidth),
-    g_(vSize(), {-meshWidth[0] / 2.0, 0.0}, meshWidth)
+                                                                                           //! VAR2
+                                                                                           u_(uSize(), {0.0, -meshWidth[1] / 2.0}, meshWidth),
+                                                                                           v_(vSize(), {-meshWidth[0] / 2.0, 0.0}, meshWidth),
+                                                                                           p_(pSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth),
+                                                                                           rhs_(rhsSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth),
+                                                                                           f_(uSize(), {0.0, -meshWidth[1] / 2.0}, meshWidth),
+                                                                                           g_(vSize(), {-meshWidth[0] / 2.0, 0.0}, meshWidth)
 {
     assert(nCells[0] > 0);
     assert(nCells[1] > 0);
