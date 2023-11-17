@@ -106,7 +106,6 @@ void Computation::computeTimeStepWidth()
         }
     }
     double dt_convection = std::min(discretization_->dx() / maxU, discretization_->dy() / maxV);
-    //! TODO: ensure somewhere that tau<1
     //! because of the scaling with the security factor tau < 1, a subtraction of a small value,
     // to ensure dt smaller and not smaller/equal than required, is not necessary
     assert(settings_.tau < 1);
@@ -204,7 +203,7 @@ void Computation::applyBoundaryValues()
         for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1; i++)
         {
             //! TODO: evtl uJEnd()-1? Weil die oberen Werte zum wegwerfen sind? - changed
-            for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd(); j++)
+            for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd() - 1; j++)
             {
                 double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2uDx2(i, j) + discretization_->computeD2uDy2(i, j));
                 double convectionTerms = discretization_->computeDu2Dx(i, j) + discretization_->computeDuvDy(i, j);
@@ -215,7 +214,7 @@ void Computation::applyBoundaryValues()
         //! compute preliminary G
         //! TODO: evtl vIEnd()-1? Weil die rechten Werte zum wegwerfen sind? - changed
         //changed
-        for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd(); i++)
+        for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd() - 1; i++)
         {
             for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1; j++)
             {
