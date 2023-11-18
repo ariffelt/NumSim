@@ -23,13 +23,13 @@ void GaussSeidel::solve()
     const double epsilon2 = epsilon_ * epsilon_;
     double res2 = res02;
 
-    while (res2 >= epsilon2 * res02 && iteration < maximumNumberOfIterations_)
+    while (res2 >= epsilon2 && iteration < maximumNumberOfIterations_)
     { // Implement GS for inner points
         for (int i = discretization_->pIBegin() + 1; i <= discretization_->pIEnd() - 1; i++)
         {
             for (int j = discretization_->pJBegin() + 1; j <= discretization_->pJEnd() - 1; j++)
             {
-                discretization_->p(i, j) = prefactor * ((discretization_->p(i - 1, j) + discretization_->p(i + 1, j)) / (hx2) + (discretization_->p(i, j - 1) + discretization_->p(i, j + 1)) / (hy2) - discretization_->rhs(i, j));
+                discretization_->p(i, j) = prefactor * ((discretization_->p(i - 1, j) + discretization_->p(i + 1, j)) / (hx2) + (discretization_->p(i, j - 1) + discretization_->p(i, j + 1)) / (hy2)-discretization_->rhs(i, j));
             }
         }
         // Update boundary values such that Neumann Boundary conditions are fulfilled
@@ -41,5 +41,5 @@ void GaussSeidel::solve()
         // update residual
         res2 = getResidual();
     }
-    std::cout << "Gauss-Seidel iterations: " << iteration << std::endl;
+    //std::cout << "Gauss-Seidel iterations: " << iteration << std::endl;
 }

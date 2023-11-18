@@ -6,8 +6,8 @@ physicalSizeX = 4.0   # physical size of the domain
 physicalSizeY = 2.0
 endTime = 20.0        # duration of the simulation
 re = 1222             # Reynolds number
-gX = 0              # external forces, set to (gX,gY) = (0,-9.81) to account for gravity
-gY = 0
+gX = 0.0              # external forces, set to (gX,gY) = (0,-9.81) to account for gravity
+gY = 0.0
 
 # Dirichlet boundary conditions
 dirichletBottomX = -0.1
@@ -15,9 +15,9 @@ dirichletBottomY = 0.2
 dirichletTopX    = 0.5
 dirichletTopY    = 0.2
 dirichletLeftX   = -0.1
-dirichletLeftY   = 0
+dirichletLeftY   = 0.0
 dirichletRightX  = -0.1
-dirichletRightY  = 0
+dirichletRightY  = 0.0
 
 # Discretization parameters
 nCellsX = 40          # number of cells in x and y direction
