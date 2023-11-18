@@ -175,10 +175,10 @@ void Settings::loadFromFile(std::string filename)
         }
     }
 
-#ifndef NDEBUG
-    // only run this code in debug target
-    std::cout << "lots of inefficient but informative output . . ." << std::endl;
-#endif
+// #ifndef NDEBUG
+//     // only run this code in debug target
+//     std::cout << "lots of inefficient but informative output . . ." << std::endl;
+// #endif
 }
 
 void Settings::printSettings()

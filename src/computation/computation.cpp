@@ -8,12 +8,6 @@
 
 #include <cmath>
 
-// TODO: constructor
-/* Computation::Computation()
-{
-    // nothing to do
-} */
-
 void Computation::initialize(int argc, char *argv[])
 {
     //! load and print settings
@@ -67,10 +61,10 @@ void Computation::testBC()
 void Computation::runSimulation()
 {
     double t = 0.0;
+    double numberOfPrints = 10.0;
+    double timestepInterval = settings_.endTime / numberOfPrints;
     while (t < settings_.endTime)
     {   
-        //std::cout << "starting t = " << t << std::endl;
-
         applyBoundaryValues();
         computeTimeStepWidth();
         // decrease time step width in last time step, s.t. the end time will be reached exactly
@@ -83,9 +77,15 @@ void Computation::runSimulation()
         computeRightHandSide();
         computePressure();
         computeVelocities();
-        //std::cout << "dt = " << dt_ << std::endl;
+
         outputWriterParaview_->writeFile(t);
         outputWriterText_->writeFile(t);
+
+        if (t >= timestepInterval)
+        {
+            std::cout << "t = " << t << ", dt = " << dt_ << std::endl;
+            timestepInterval += settings_.endTime / numberOfPrints;
+        }
     }
 }
 //! Compute the time step width dt from maximum velocities.
@@ -200,11 +200,10 @@ void Computation::computePreliminaryVelocities()
     //! compute the preliminary velocities only for the inside of the area, as on the direct boundary, they are constantly 0
 
     // ! compute preliminary F
-    // changed
     for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1; i++)
     {
         //! TODO: evtl uJEnd()-1? Weil die oberen Werte zum wegwerfen sind? - changed
-        for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd() - 1; j++)
+        for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd(); j++)
         {
             double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2uDx2(i, j) + discretization_->computeD2uDy2(i, j));
             double convectionTerms = discretization_->computeDu2Dx(i, j) + discretization_->computeDuvDy(i, j);
@@ -215,7 +214,7 @@ void Computation::computePreliminaryVelocities()
     //! compute preliminary G
     //! TODO: evtl vIEnd()-1? Weil die rechten Werte zum wegwerfen sind? - changed
     // changed
-    for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd() - 1; i++)
+    for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd(); i++)
     {
         for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1; j++)
         {
@@ -254,7 +253,6 @@ void Computation::computePressure()
 void Computation::computeVelocities()
 {
     // compute final u
-    // xhanged
     for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1; i++)
     {
         for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd(); j++)
@@ -265,7 +263,6 @@ void Computation::computeVelocities()
     // compute final v
     for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd(); i++)
     {
-        // changed
         for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1; j++)
         {
             discretization_->v(i, j) = discretization_->g(i, j) - dt_ * (discretization_->p(i, j + 1) - discretization_->p(i, j)) / discretization_->dy();

@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 
     Settings settings;
     // load settings from file
-    settings.loadFromFile(filename);
+    // settings.loadFromFile(filename);
 
     // display all settings on console
     //settings.printSettings();

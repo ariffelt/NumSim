@@ -22,7 +22,7 @@ dirichletRightY  = 0
 # Discretization parameters
 nCellsX = 20          # number of cells in x and y direction
 nCellsY = 20
-useDonorCell = false   # if donor cell discretization should be used, possible values: true false
+useDonorCell = true   # if donor cell discretization should be used, possible values: true false
 alpha = 0.5           # factor for donor-cell scheme, 0 is equivalent to central differences
 tau = 0.5             # safety factor for time step width
 maximumDt = 0.1       # maximum values for time step width
