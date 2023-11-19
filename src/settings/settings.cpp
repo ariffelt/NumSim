@@ -1,7 +1,12 @@
 #include "settings.h"
+
 #include <fstream>
 #include <iomanip>
 
+/**
+ * Loads the settings from a parameter file
+ * @param filename name of the parameter file
+*/
 void Settings::loadFromFile(std::string filename)
 {
     // open file
@@ -24,9 +29,6 @@ void Settings::loadFromFile(std::string filename)
         // at the end of the file break for loop
         if (file.eof())
             break;
-
-        // print line
-        // std::cout << "line " << lineNo << ": " << line << std::endl;
 
         // remove whitespace at beginning of line (if there is any)
         while (line[0] == ' ' || line[0] == '\t')
@@ -174,11 +176,6 @@ void Settings::loadFromFile(std::string filename)
             std::cout << "unknown parameter \"" << parameterName << "\"." << std::endl;
         }
     }
-
-#ifndef NDEBUG
-    // only run this code in debug target
-    std::cout << "lots of inefficient but informative output . . ." << std::endl;
-#endif
 }
 
 void Settings::printSettings()

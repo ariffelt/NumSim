@@ -11,15 +11,14 @@
 class Computation
 {
 public:
-    //! constructor TODO:
-    //! I think we do not even need a constructor, the default constructor is sufficient
-    // Computation();
 
+    //! constructor, initialize settings, discretization, pressure solver and output writers
     void initialize(int argc, char *argv[]);
 
     //! run the whole simulation until tend
     void runSimulation();
 
+    //! test the implementation of boundary conditions
     void testBC();
 
 private:

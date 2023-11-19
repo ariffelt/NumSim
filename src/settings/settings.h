@@ -3,7 +3,8 @@
 #include <iostream>
 #include <array>
 
-/** All settings that parametrize a simulation run.
+/** 
+ * All settings that parametrize a simulation run
  */
 struct Settings
 {

@@ -1,6 +1,9 @@
 #include "settings/settings.h"
 #include "computation/computation.h"
 
+/**
+ * Entry point of simulation
+*/
 int main(int argc, char *argv[])
 {
     // if the number of given command line arguments is only 1 (= the program name),
@@ -18,15 +21,7 @@ int main(int argc, char *argv[])
     // print message
     std::cout << "Filename: \"" << filename << "\"" << std::endl;
 
-    Settings settings;
-    // load settings from file
-    settings.loadFromFile(filename);
-
-    // display all settings on console
-    //settings.printSettings();
-
     // create computation object and run simulation
-    //TODO: in initialize settings wiederverwenden
     Computation computation = Computation();
     computation.initialize(argc, argv);
     computation.runSimulation();
