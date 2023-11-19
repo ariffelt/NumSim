@@ -2,18 +2,27 @@
 
 #include <cassert>
 
+/**
+ * Constructor
+ * @param size size of the array
+*/
 Array2D::Array2D(std::array<int, 2> size) : size_(size)
 {
     // allocate data, intialize to 0
     data_.resize(size_[0] * size_[1], 0.0);
 }
 
-//! get the size
+/**
+ * get the size of the array
+*/
 std::array<int, 2> Array2D::size() const
 {
     return size_;
 }
 
+/**
+ * get the data of the array
+*/
 double &Array2D::operator()(int i, int j)
 {
     const int index = j * size_[0] + i;
@@ -26,6 +35,9 @@ double &Array2D::operator()(int i, int j)
     return data_[index];
 }
 
+/**
+ * get the data of the array
+*/
 double Array2D::operator()(int i, int j) const
 {
     const int index = j * size_[0] + i;

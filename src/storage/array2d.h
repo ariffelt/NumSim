@@ -3,9 +3,10 @@
 #include <vector>
 #include <array>
 
-/** This class represents a 2D array of double values.
- *  Internally they are stored consecutively in memory.
- *  The entries can be accessed by two indices i,j.
+/** 
+ * This class represents a 2D array of double values.
+ * Internally they are stored consecutively in memory.
+ * The entries can be accessed by two indices i,j.
  */
 class Array2D
 {
