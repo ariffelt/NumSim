@@ -130,7 +130,7 @@ void Computation::computeTimeStepWidth()
 
     // subtraction of small value to ensure dt smaller and not smaller/equal than required not necessary since we scale with security factor tau < 1
     assert(settings_.tau < 1);
-    dt_ = settings_.tau * std::min(dt_diffusion, dt_convection);
+    dt_ = std::min(settings_.tau * std::min(dt_diffusion, dt_convection), settings_.maximumDt);
 }
 
 /**
