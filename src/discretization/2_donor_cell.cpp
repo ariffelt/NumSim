@@ -5,11 +5,12 @@
 
 /**
  * Constructor
+ * @param partitioning partitioning of the grid
  * @param nCells number of cells in x and y direction
  * @param meshWidth mesh width in x and y direction
  * @param alpha donor cell weight parameter
 */
-DonorCell::DonorCell(std::array<int, 2> nCells, std::array<double, 2> meshWidth, double alpha) : Discretization(nCells, meshWidth), alpha_(alpha)
+DonorCell::DonorCell(std::shared_ptr<Partitioning> partitioning, std::array<int, 2> nCells, std::array<double, 2> meshWidth, double alpha) : Discretization(partitioning, nCells, meshWidth), alpha_(alpha)
 {
 }
 

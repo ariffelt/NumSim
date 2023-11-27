@@ -4,10 +4,11 @@
 
 /**
  * Constructor
+ * @param partitioning partitioning of the grid
  * @param nCells number of cells in x and y direction
  * @param meshWidth mesh width in x and y direction
  */
-Discretization::Discretization(std::array<int, 2> nCells, std::array<double, 2> meshWidth) : StaggeredGrid(nCells, meshWidth)
+Discretization::Discretization(std::shared_ptr<Partitioning> partitioning, std::array<int, 2> nCells, std::array<double, 2> meshWidth) : StaggeredGrid(partitioning, nCells, meshWidth)
 {
 }
 
