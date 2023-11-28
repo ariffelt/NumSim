@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "storage/fieldvariable.h"
-#include "../partitioning/partitioning.h"
+#include "partitioning/partitioning.h"
 
 class StaggeredGrid
 {
