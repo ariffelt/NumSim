@@ -8,7 +8,7 @@ class CentralDifferences : public Discretization
 {
 public:
     //! constructor
-    CentralDifferences(std::array<int, 2> nCells, std::array<double, 2> meshWidth);
+    CentralDifferences(std::shared_ptr<Partitioning> partitioning, std::array<int, 2> nCells, std::array<double, 2> meshWidth);
 
     //! TODO: do I need override { behind const? Because I am using the pure virtual function computeDuDx declared in discretization?
     //! compute the 1st derivative ∂ u^2 / ∂x

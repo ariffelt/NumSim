@@ -1,14 +1,18 @@
 #include "discretization/0_staggered_grid.h"
 
 #include <cassert>
-
+#include <memory>
 /**
  * Constructor of staggered grid.
  * Provides several parameters for the staggered grid.
+ * @param partitioning partitioning of the grid
  * @param nCells number of cells in each coordinate direction
  * @param meshWidth mesh width in each coordinate direction
+ * TODO: implement ghost layers
 */
-StaggeredGrid::StaggeredGrid(std::array<int, 2> nCells, std::array<double, 2> meshWidth) : nCells_(nCells),
+StaggeredGrid::StaggeredGrid(std::shared_ptr<Partitioning> partitioning, std::array<int, 2> nCells, std::array<double, 2> meshWidth) : 
+                                                                                           partitioning_(partitioning),
+                                                                                           nCells_(partitioning->nCellsLocal()),
                                                                                            meshWidth_(meshWidth),
                                                                                            u_(uSize(), {0.0, -meshWidth[1] / 2.0}, meshWidth),
                                                                                            v_(vSize(), {-meshWidth[0] / 2.0, 0.0}, meshWidth),
