@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <mpi.h>
 
 class Partitioning
 {
@@ -53,4 +54,54 @@ public:
   //! (i_local,j_local) + nodeOffset = (i_global,j_global)
   //! used in OutputWriterParaviewParallel
   std::array<int,2> nodeOffset() const;
+
+protected:
+
+  //! number of cells in x and y direction
+  std::array<int,2> nCellsGlobal_;
+
+  //! number of cells in x and y direction in the own partition
+  std::array<int,2> nCellsLocal_;
+
+  //! number of MPI ranks in x and y direction
+  std::array<int,2> nRanks_;
+
+  //! number of partitions in x and y direction
+  std::array<int,2> nPartitions_;
+
+  //! rank no of the own MPI rank
+  int ownRankNo_;
+
+  //! rank no of the left neighbouring rank
+  int leftNeighbourRankNo_;
+
+  //! rank no of the right neighbouring rank
+  int rightNeighbourRankNo_;
+
+  //! rank no of the top neighbouring rank
+  int topNeighbourRankNo_;
+
+  //! rank no of the bottom neighbouring rank
+  int bottomNeighbourRankNo_;
+
+  //! if the own partition has part of the bottom boundary of the whole domain
+  bool ownPartitionContainsBottomBoundary_;
+
+  //! if the own partition has part of the top boundary of the whole domain
+  bool ownPartitionContainsTopBoundary_;
+
+  //! if the own partition has part of the left boundary of the whole domain
+  bool ownPartitionContainsLeftBoundary_;
+
+  //! if the own partition has part of the right boundary of the whole domain
+  bool ownPartitionContainsRightBoundary_;
+
+  //! offset values for counting local nodes in x and y direction. 
+  //! (i_local,j_local) + nodeOffset = (i_global,j_global)
+  std::array<int,2> nodeOffset_;
+
+private:
+
+  //! decompose computational domain into partitions
+  void computePartitioning();
 };
