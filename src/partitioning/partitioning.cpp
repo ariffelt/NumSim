@@ -3,18 +3,31 @@
 #include <cassert>
 
 //! compute partitioning, set internal variables
-void initialize(std::array<int,2> nCellsGlobal)
+void Partitioning::initialize(std::array<int, 2> nCellsGlobal)
 {
+    nCellsGlobal_ = nCellsGlobal;
+    MPI_Comm_size(MPI_COMM_WORLD, &nRanks_);
+    MPI_Comm_rank(MPI_COMM_WORLD, &ownRankNo_);
+
+    // compute optimal partitioning
+    //TODO: Dritten Input überprüfen
+    MPI_Dims_create(nRanks_, 2, nCellsGlobal_.data());
+}
+
+//! decompose computational domain into partitions
+void computePartitioning()
+{
+    //!TODO: override nPartitions_
 }
 
 //! get the local number of cells in the own subdomain
-std::array<int,2> Partitioning::nCellsLocal() const
+std::array<int, 2> Partitioning::nCellsLocal() const
 {
 }
 
 //! get the global number of cells in the whole computational domain
 //! used in OutputWriterParaviewParallel
-std::array<int,2> Partitioning::nCellsGlobal() const
+std::array<int, 2> Partitioning::nCellsGlobal() const
 {
 }
 
@@ -74,6 +87,8 @@ int Partitioning::bottomNeighbourRankNo() const
 //! get the offset values for counting local nodes in x and y direction.
 //! (i_local,j_local) + nodeOffset = (i_global,j_global)
 //! used in OutputWriterParaviewParallel
-std::array<int,2> Partitioning::nodeOffset() const
+std::array<int, 2> Partitioning::nodeOffset() const
 {
 }
+
+
