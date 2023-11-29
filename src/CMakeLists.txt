@@ -6,7 +6,7 @@ project(numsim_parallel)
 # Specify the name of the executable (${PROJECT_NAME} which is equal to what was set in the project() command).
 # Also specify the source files.
 set(PROJECT_FILES
-    ../partitioning/partitioning.cpp    
+    partitioning/partitioning.cpp    
 
     computation/computation.cpp  
     computation/computation_parallel.cpp  

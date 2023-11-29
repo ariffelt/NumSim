@@ -21,7 +21,7 @@ public:
     //! test the implementation of boundary conditions
     void testBC();
 
-private:
+protected:
     //! compute the time step width dt from maximum velocities
     void computeTimeStepWidth();
 
@@ -46,11 +46,13 @@ private:
 
     std::unique_ptr<PressureSolver> pressureSolver_;
 
-    std::unique_ptr<OutputWriterParaview> outputWriterParaview_;
+    std::unique_ptr<OutputWriterParaviewParallel> outputWriterParaview_;
 
-    std::unique_ptr<OutputWriterText> outputWriterText_;
+    std::unique_ptr<OutputWriterTextParallel> outputWriterText_;
 
     std::array<double, 2> meshWidth_;
+
+    // std::shared_ptr<Partitioning> partitioning_;
 
     double dt_;
 };
