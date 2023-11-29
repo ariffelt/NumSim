@@ -1,13 +1,24 @@
 #pragma once
 
 #include <mpi.h>
-#include "partitioning/partitioning.h"
+
 #include "computation.h"
+
+#include "partitioning/partitioning.h"
+
+#include "discretization/2_central_differences.h"
+#include "discretization/2_donor_cell.h"
+
+#include "pressure_solver/red_black_sor.h"
+
+#include "output_writer/output_writer_text_parallel.h"
+#include "output_writer/output_writer_paraview_parallel.h"
+
 
 class ComputationParallel : public Computation
 {
 public:
-    virtual void initialize(std::string filename);
+    virtual void initialize(int argc, char *argv[]);
 
     virtual void runSimulation();
 
@@ -32,4 +43,5 @@ protected:
 
     // //! compute the new velocities, u,v, from the preliminary velocities, F,G and the pressure, p
     // void computeVelocities();
+    std::shared_ptr<Partitioning> partitioning_;
 };
