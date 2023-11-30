@@ -24,6 +24,10 @@ public:
   //! number of MPI ranks
   int nRanks() const;
 
+  void MPI_isend(int destinationRank, std::vector<double> &data, MPI_Request &request);
+
+  void MPI_irecv(int sourceRank, std::vector<double> &data, int count, MPI_Request &request);
+
   //! if the own partition has part of the bottom boundary of the whole domain
   bool ownPartitionContainsBottomBoundary() const;
 
