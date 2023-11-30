@@ -1,6 +1,7 @@
-#include "partitioning.h"
+#include "partitioning/partitioning.h"
 
 #include <cassert>
+#include <vector>
 
 //! compute partitioning, set internal variables
 void Partitioning::initialize(std::array<int, 2> nCellsGlobal)
@@ -39,6 +40,14 @@ int Partitioning::ownRankNo() const
 
 //! number of MPI ranks
 int Partitioning::nRanks() const
+{
+}
+
+void Partitioning::MPI_isend(int destinationRank, std::vector<double> &data, MPI_Request &request)
+{
+}
+
+void Partitioning::MPI_irecv(int sourceRank, std::vector<double> &data, int count, MPI_Request &request)
 {
 }
 
