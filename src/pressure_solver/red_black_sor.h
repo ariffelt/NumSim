@@ -10,7 +10,8 @@ public:
     RedBlackSOR(std::shared_ptr<Discretization> discretization,
                 double epsilon, 
                 int maximumNumberOfIterations, 
-                double omega);
+                double omega,
+                std::shared_ptr<Partitioning> partitioning);
 
     //! solve the system of the Poisson equation for pressure
     void solve(); // TODO: override necessary?
