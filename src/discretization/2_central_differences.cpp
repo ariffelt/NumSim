@@ -9,7 +9,7 @@
  * @param nCells number of cells in x and y direction
  * @param meshWidth mesh width in x and y direction
  */
-CentralDifferences::CentralDifferences(std::shared_ptr<Partitioning> partitioning, std::array<int, 2> nCells, std::array<double, 2> meshWidth) : Discretization(partitioning, nCells, meshWidth)
+CentralDifferences::CentralDifferences(Partitioning partitioning, std::array<double, 2> meshWidth) : Discretization(partitioning, nCells, meshWidth)
 {
 }
 
