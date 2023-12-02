@@ -8,7 +8,7 @@ class DonorCell : public Discretization
 {
 public:
     //! constructor
-    DonorCell(std::shared_ptr<Partitioning> partitioning, std::array<int, 2> nCells, std::array<double, 2> meshWidth, double alpha);
+    DonorCell(Partitioning partitioning, std::array<double, 2> meshWidth, double alpha);
 
     //! compute the 1st derivative ∂ u^2 / ∂x
     virtual double computeDu2Dx(int i, int j) const;
