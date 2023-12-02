@@ -32,6 +32,8 @@ set(PROJECT_FILES
     storage/fieldvariable.cpp
 )
 
+add_executable(${PROJECT_NAME} main.cpp ${PROJECT_FILES})
+
 find_package(MPI REQUIRED)
 
 include_directories(${MPI_INCLUDE_PATH})
@@ -46,8 +48,6 @@ if(MPI_LINK_FLAGS)
   set_target_properties(${PROJECT_NAME} PROPERTIES
     LINK_FLAGS "${MPI_LINK_FLAGS}")
 endif()
-
-add_executable(${PROJECT_NAME} main.cpp ${PROJECT_FILES})
 
 # Add the project directory to include directories, to be able to include all project header files from anywhere
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR})
