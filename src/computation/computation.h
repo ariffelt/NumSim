@@ -5,10 +5,8 @@
 #include "settings/settings.h"
 #include "discretization/1_discretization.h"
 #include "pressure_solver/pressure_solver.h"
-//#include "output_writer/output_writer_paraview.h"
-//#include "output_writer/output_writer_text.h"
-#include "output_writer/output_writer_paraview_parallel.h"
-#include "output_writer/output_writer_text_parallel.h"
+#include "output_writer/output_writer_paraview.h"
+#include "output_writer/output_writer_text.h"
 
 class Computation
 {
@@ -48,9 +46,9 @@ protected:
 
     std::unique_ptr<PressureSolver> pressureSolver_;
 
-    std::unique_ptr<OutputWriterParaviewParallel> outputWriterParaview_;
+    std::unique_ptr<OutputWriterParaview> outputWriterParaview_;
 
-    std::unique_ptr<OutputWriterTextParallel> outputWriterText_;
+    std::unique_ptr<OutputWriterText> outputWriterText_;
 
     std::array<double, 2> meshWidth_;
 

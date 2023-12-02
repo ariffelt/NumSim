@@ -2,7 +2,7 @@
 
 #include <mpi.h>
 
-#include "computation.h"
+#include "computation/computation.h"
 
 #include "partitioning/partitioning.h"
 
@@ -25,12 +25,21 @@ public:
 protected:
     //! TODO: which of these functions do we actually need to override?
 
-
     //! compute the time step width dt from maximum velocities
-    // void computeTimeStepWidth();
+    void computeTimeStepWidthParallel();
 
-    // //! set boundary values of u and v to correct values
-    // void applyBoundaryValues();
+    //! set boundary values for u, v, F and G and exchange values at borders btw subdomains
+    void applyBoundaryValues();
+
+    void applyBoundaryValuesBottom();
+    void applyBoundaryValuesTop();
+    void applyBoundaryValuesLeft();
+    void applyBoundaryValuesRight();
+
+    void exchangeVelocitiesBottom();
+    void exchangeVelocitiesTop();
+    void exchangeVelocitiesLeft();
+    void exchangeVelocitiesRight();
 
     // //! compute the preliminary velocities, F and G
     // void computePreliminaryVelocities();
@@ -43,5 +52,16 @@ protected:
 
     // //! compute the new velocities, u,v, from the preliminary velocities, F,G and the pressure, p
     // void computeVelocities();
+
+    std::unique_ptr<OutputWriterParaviewParallel> outputWriterParaviewParallel_;
+
+    std::unique_ptr<OutputWriterTextParallel> outputWriterTextParallel_;
+
     std::shared_ptr<Partitioning> partitioning_;
+
+    // initialize MPI requests
+    std::vector<MPI_Request> sendRequests_;
+    std::vector<MPI_Request> receiveRequests_;
+    int sendRequestCounter_ = 0;
+    int receiveRequestCounter_ = 0;
 };
