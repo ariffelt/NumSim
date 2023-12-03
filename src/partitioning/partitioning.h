@@ -20,7 +20,6 @@ public:
   //! (i_local,j_local) + nodeOffset = (i_global,j_global)
   void computeNodeOffset();
 
-
   //! get the local number of cells in the own subdomain
   std::array<int,2> nCellsLocal() const;
 
@@ -95,11 +94,14 @@ public:
   //! receive info from right neighboring subdomain
   void MPI_irecvFromRight(std::vector<double> &data, int count, MPI_Request &request);
 
+  //! MPI-wait command
+  void MPI_wait(MPI_Request &request);
+
   //! MPI-waitall command
   void MPI_waitall(std::vector<MPI_Request> &requests);
 
   //! MPI-allreduce command
-  double MPI_allreduce(double &value, MPI_Op op);
+  double MPI_allreduce(double &localVal, MPI_Op op);
 
   //! if the own partition has part of the bottom boundary of the whole domain
   bool ownPartitionContainsBottomBoundary();
@@ -187,5 +189,5 @@ protected:
 private:
 
   //! decompose computational domain into partitions
-  void computePartitioning();
+  void computePartitioning(int nRanks);
 };
