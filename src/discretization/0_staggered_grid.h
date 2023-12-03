@@ -3,14 +3,14 @@
 #include <array>
 #include <memory>
 
-#include "storage/fieldvariable.h"
+#include "storage/field_variable.h"
 #include "partitioning/partitioning.h"
 
 class StaggeredGrid
 {
 public:
     //! constructor
-    StaggeredGrid(Partitioning partitioning, std::array<double, 2> meshWidth);
+    StaggeredGrid(const std::shared_ptr<Partitioning> partitioning, std::array<double, 2> meshWidth);
 
     //! get the mesh width, i.e. the length of a single cell in x and y direction
     const std::array<double, 2> meshWidth() const;
@@ -111,7 +111,7 @@ public:
 protected:
     const std::array<int, 2> nCells_;
     const std::array<double, 2> meshWidth_;
-    Partitioning partitioning_;
+    const std::shared_ptr<Partitioning> partitioning_;
     FieldVariable u_;
     FieldVariable v_;
     FieldVariable p_;

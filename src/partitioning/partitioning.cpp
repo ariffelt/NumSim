@@ -35,13 +35,13 @@ void Partitioning::initialize(std::array<int, 2> nCellsGlobal)
 }
 
 // get the row index of the own subdomain
-int Partitioning::nodeRowIndex()
+int Partitioning::nodeRowIndex() const
 {
     return (int)(ownRankNo_ / nDomains_[0]) + 1;
 }
 
 // get the column index of the own subdomain
-int Partitioning::nodeColumnIndex()
+int Partitioning::nodeColumnIndex() const
 {
     return ownRankNo_ % nDomains_[0] + 1;
 }
@@ -252,27 +252,27 @@ double Partitioning::MPI_allreduce(double &localVal, MPI_Op op)
 }
 
 // checks if the own partition has part of the bottom boundary of the whole domain
-bool Partitioning::ownPartitionContainsBottomBoundary()
+bool Partitioning::ownPartitionContainsBottomBoundary() const
 {
     return nodeRowIndex() == 1;
 }   
 
 // if the own partition has part of the top boundary of the whole domain
 // used in OutputWriterParaviewParallel
-bool Partitioning::ownPartitionContainsTopBoundary()
+bool Partitioning::ownPartitionContainsTopBoundary() const
 {
     return nodeRowIndex() == nDomains_[1];
 }
 
 // if the own partition has part of the left boundary of the whole domain
-bool Partitioning::ownPartitionContainsLeftBoundary()
+bool Partitioning::ownPartitionContainsLeftBoundary() const
 {
     return nodeColumnIndex() == 1;
 }
 
 // if the own partition has part of the right boundary of the whole domain
 // used in OutputWriterParaviewParallel
-bool Partitioning::ownPartitionContainsRightBoundary()
+bool Partitioning::ownPartitionContainsRightBoundary() const
 {
     return nodeColumnIndex() == nDomains_[0];
 }

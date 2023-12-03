@@ -104,18 +104,18 @@ public:
   double MPI_allreduce(double &localVal, MPI_Op op);
 
   //! if the own partition has part of the bottom boundary of the whole domain
-  bool ownPartitionContainsBottomBoundary();
+  bool ownPartitionContainsBottomBoundary() const;
 
   //! if the own partition has part of the top boundary of the whole domain
   //! used in OutputWriterParaviewParallel
-  bool ownPartitionContainsTopBoundary();
+  bool ownPartitionContainsTopBoundary() const;
 
   //! if the own partition has part of the left boundary of the whole domain
-  bool ownPartitionContainsLeftBoundary();
+  bool ownPartitionContainsLeftBoundary() const;
 
   //! if the own partition has part of the right boundary of the whole domain
   //! used in OutputWriterParaviewParallel
-  bool ownPartitionContainsRightBoundary();
+  bool ownPartitionContainsRightBoundary() const;
 
   //! get the rank no of the left neighbouring rank
   int leftNeighbourRankNo();
@@ -137,10 +137,10 @@ public:
 protected:
 
   //! get the row index of the node
-  int nodeRowIndex();
+  int nodeRowIndex() const;
 
   //! get the column index of the node
-  int nodeColumnIndex();
+  int nodeColumnIndex() const;
 
   //! number of cells in x and y direction
   std::array<int,2> nCellsGlobal_;

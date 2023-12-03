@@ -13,7 +13,7 @@ void ComputationParallel::initialize(int argc, char *argv[])
     settings_.loadFromFile(argv[1]);
     settings_.printSettings();
 
-    partitioning_ = std::make_shared<Partitioning>(settings_.nCells);
+    partitioning_ = std::make_shared<Partitioning>();
     // TODO: necessary?
     partitioning_->initialize(settings_.nCells);
 
@@ -45,8 +45,8 @@ void ComputationParallel::initialize(int argc, char *argv[])
         std::cout << "Error: Unknown pressure solver for parallel computing: " << settings_.pressureSolver << std::endl;
         exit(1);
     }
-    outputWriterTextParallel_ = std::make_unique<OutputWriterTextParallel>(discretization_, partitioning_);
-    outputWriterParaviewParallel_ = std::make_unique<OutputWriterParaviewParallel>(discretization_, partitioning_);
+    outputWriterTextParallel_ = std::make_unique<OutputWriterTextParallel>(discretization_, *partitioning_);
+    outputWriterParaviewParallel_ = std::make_unique<OutputWriterParaviewParallel>(discretization_, *partitioning_);
 }
 
 /**

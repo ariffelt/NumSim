@@ -10,9 +10,9 @@
  * @param meshWidth mesh width in each coordinate direction
  * TODO: implement ghost layers
 */
-StaggeredGrid::StaggeredGrid(Partitioning partitioning, std::array<double, 2> meshWidth) : 
+StaggeredGrid::StaggeredGrid(const std::shared_ptr<Partitioning> partitioning, std::array<double, 2> meshWidth) : 
                                                                                            partitioning_(partitioning),
-                                                                                           nCells_(partitioning.nCellsLocal()),
+                                                                                           nCells_(partitioning->nCellsLocal()),
                                                                                            meshWidth_(meshWidth),
                                                                                            u_(uSize(), {0.0, -meshWidth[1] / 2.0}, meshWidth),
                                                                                            v_(vSize(), {-meshWidth[0] / 2.0, 0.0}, meshWidth),

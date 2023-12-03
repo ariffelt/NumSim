@@ -8,7 +8,7 @@ class Discretization : public StaggeredGrid
 {
 public:
     //! constructor
-    Discretization(Partitioning partitioning, std::array<double, 2> meshWidth);
+    Discretization(const std::shared_ptr<Partitioning> partitioning, std::array<double, 2> meshWidth);
 
     //! compute the 1st derivative ∂ u^2 / ∂x
     virtual double computeDu2Dx(int i, int j) const = 0;
