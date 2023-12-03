@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <vector>
+#include <cmath>
 
 // compute partitioning, set internal variables
 void Partitioning::initialize(std::array<int, 2> nCellsGlobal)
@@ -11,13 +12,18 @@ void Partitioning::initialize(std::array<int, 2> nCellsGlobal)
     MPI_Comm_rank(MPI_COMM_WORLD, &ownRankNo_);
 
     // compute optimal partitioning
-    //!TODO: Dritten Input überprüfen
-    MPI_Dims_create(nRanks_, 2, nDomains_.data());
+    //MPI_Dims_create(nRanks_, 2, nDomains_.data());
+    computePartitioning(nRanks_);
+
     std::cout << "nDomains: [" << nDomains_[0] << "," << nDomains_[1] << "]" << std::endl;
+
+    // compute local number of cells
     nCellsLocal_ = std::array<int,2>{nCellsGlobal_[0] / nDomains_[0], nCellsGlobal_[1] / nDomains_[1]};
     std::array<int,2> remainder = std::array<int,2>{nCellsGlobal_[0] % nDomains_[0], nCellsGlobal_[1] % nDomains_[1]};
     //std::cout << "remainder: [" << remainder[0] << "," << remainder[1] << "]" << std::endl;
     computeNodeOffset();
+
+    // add remainder to the local number of calls in the last rank in each direction
     if (nodeColumnIndex() == nDomains_[0])
     {
         nCellsLocal_[0] += remainder[0];
@@ -28,15 +34,18 @@ void Partitioning::initialize(std::array<int, 2> nCellsGlobal)
     }
 }
 
+// get the row index of the own subdomain
 int Partitioning::nodeRowIndex()
 {
     return (int)(ownRankNo_ / nDomains_[0]) + 1;
 }
 
+// get the column index of the own subdomain
 int Partitioning::nodeColumnIndex()
 {
     return ownRankNo_ % nDomains_[0] + 1;
 }
+
 // compute node offset
 // (i_local,j_local) + nodeOffset = (i_global,j_global)
 // used in OutputWriterParaviewParallel
@@ -51,33 +60,34 @@ void Partitioning::computeNodeOffset()
 }
 
 // decompose computational domain into partitions
-// void computePartitioning()
-// {
-//     assert(nRanks_ % 2 == 0);
-//     assert(nRanks_ > 0);
+// works also for rectangular domains
+void Partitioning::computePartitioning(int nRanks)
+{
+    assert(nRanks % 2 == 0);
+    assert(nRanks > 0);
 
-//     // compute optimal partitioning
-//     //!TODO: check again
-//     xOpt = 1;
-//     yOpt = nRanks_;
-//     for (int x = 1; x <= nRanks_; x++)
-//     {
-//         if (nRanks_ % x == 0)
-//         {
-//             y = nRanks_ / x;
-//             if (nCellsGlobal_[0]/x > nCellsGlobal_[1]/y)
-//             {
-//                 break;
-//             }
-//             if (nCellsGlobal_[1]/y - nCellsGlobal_[0]/x < (nCellsGlobal_[1]/yOpt - nCellsGlobal_[0]/xOpt)
-//             {
-//                 xOpt = x;
-//                 yOpt = y;
-//             }
-//         }
-//     }
-//     nDomains_ = {xOpt, yOpt};
-// }
+    // compute optimal partitioning
+    //!TODO: check again
+    int xOpt = 1;
+    int yOpt = nRanks;
+    for (int x = 1; x <= nRanks; x++)
+    {
+        if (nRanks % x == 0)
+        {
+            int y = (int)(nRanks / x);
+            
+            //check if the x, y ratio is closer to 1 than the current optimal ratio
+            if (nCellsGlobal_[1]/y - nCellsGlobal_[0]/x < fabs((nCellsGlobal_[1]/yOpt - nCellsGlobal_[0]/xOpt)))
+            {
+                xOpt = x;
+                yOpt = y;
+            }
+            std::cout << "xOpt: " << xOpt << std::endl;
+            std::cout << "yOpt: " << yOpt << std::endl;
+        }
+    }
+    nDomains_ = {xOpt, yOpt};
+}
 
 // get the local number of cells in the own subdomain
 std::array<int, 2> Partitioning::nCellsLocal() const
@@ -220,6 +230,12 @@ void Partitioning::MPI_irecvFromRight(std::vector<double> &data, int count, MPI_
     MPI_irecv(rightNeighbourRankNo(), data, count, request);
 }
 
+//MPI-wait command
+void Partitioning::MPI_wait(MPI_Request &request)
+{
+    MPI_Wait(&request, MPI_STATUS_IGNORE);
+}
+
 //MPI-waitall command
 void Partitioning::MPI_waitall(std::vector<MPI_Request> &requests)
 {
@@ -228,10 +244,12 @@ void Partitioning::MPI_waitall(std::vector<MPI_Request> &requests)
 
 //MPI-allreduce command
 //!TODO: check again
-//double Partitioning::MPI_allreduce(double &value, MPI_Op op)
-//{
-//    MPI_Allreduce(MPI_IN_PLACE, &value, 1, MPI_DOUBLE, op, MPI_COMM_WORLD);
-//}
+double Partitioning::MPI_allreduce(double &localVal, MPI_Op op)
+{
+    double globalVal = 0.0;
+    MPI_Allreduce(&localVal, &globalVal, 1, MPI_DOUBLE, op, MPI_COMM_WORLD);
+    return globalVal;
+}
 
 // checks if the own partition has part of the bottom boundary of the whole domain
 bool Partitioning::ownPartitionContainsBottomBoundary()
