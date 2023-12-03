@@ -24,15 +24,16 @@ void Computation::initialize(int argc, char *argv[])
     meshWidth_[0] = settings_.physicalSize[0] / settings_.nCells[0];
     meshWidth_[1] = settings_.physicalSize[1] / settings_.nCells[1];
 
-    // initialize discretization
-    if (settings_.useDonorCell)
-    {
-        discretization_ = std::make_shared<DonorCell>(settings_.nCells, meshWidth_, settings_.alpha);
-    }
-    else
-    {
-        discretization_ = std::make_shared<CentralDifferences>(settings_.nCells, meshWidth_);
-    }
+    // doesn't work anymore in exercise 2s framework since DonorCell now wants a Partitioning object
+    // // initialize discretization
+    // if (settings_.useDonorCell)
+    // {
+    //     discretization_ = std::make_shared<DonorCell>(settings_.nCells, meshWidth_, settings_.alpha);
+    // }
+    // else
+    // {
+    //     discretization_ = std::make_shared<CentralDifferences>(settings_.nCells, meshWidth_);
+    // }
 
     // initialize the pressure solver
     if (settings_.pressureSolver == "GaussSeidel")
@@ -49,9 +50,10 @@ void Computation::initialize(int argc, char *argv[])
         exit(1);
     }
 
-    // initialize output writers
-    outputWriterText_ = std::make_unique<OutputWriterText>(discretization_);
-    outputWriterParaview_ = std::make_unique<OutputWriterParaview>(discretization_);
+    // outputWriters have been overwritten in second exercise and thus don't work anymore for exercise 1s implementation
+    // // initialize output writers
+    // outputWriterText_ = std::make_unique<OutputWriterText>(discretization_);
+    // outputWriterParaview_ = std::make_unique<OutputWriterParaview>(discretization_);
 }
 
 /**
