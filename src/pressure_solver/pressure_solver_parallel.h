@@ -21,7 +21,7 @@ protected:
     
     void sendAndBorrowValues(); 
 
-    virtual double getResidual();
+    double getResidual();
 
     std::shared_ptr<Partitioning> partitioning_;
 };

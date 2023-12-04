@@ -25,6 +25,8 @@ set(PROJECT_FILES
     pressure_solver/pressure_solver.cpp
     pressure_solver/gauss_seidel.cpp
     pressure_solver/sor.cpp
+    pressure_solver/pressure_solver_parallel.cpp
+    pressure_solver/red_black_sor.cpp
 
     settings/settings.cpp
 
