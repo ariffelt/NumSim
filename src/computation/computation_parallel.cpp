@@ -60,12 +60,15 @@ void ComputationParallel::runSimulation()
 
     while (t < settings_.endTime)
     {
+        std::cout << "t = " << t << std::endl;
         // set boundary values for u, v, F and G and exchange values at borders btw subdomains
         // exchange velocities at boundaries btw subdomains
         applyBoundaryValues();
+        std::cout << "applyBoundaryValues done" << std::endl;
 
         // compute time step size dt (contributions from all processes)
         computeTimeStepWidthParallel();
+        std::cout << "computeTimeStepWidthParallel done" << std::endl;
         
         // decrease time step width in last time step, s.t. the end time will be reached exactly
         if (t + dt_ > settings_.endTime)        
@@ -76,17 +79,21 @@ void ComputationParallel::runSimulation()
 
         // compute preliminary velocities (each process independent from the others)
         computePreliminaryVelocities();
+        std::cout << "computePreliminaryVelocities done" << std::endl;
 
         // compute rhs of pressure equation (each process independent from the others)
         computeRightHandSide();
+        std::cout << "computeRightHandSide done" << std::endl;
 
         // solve pressure equation
         // exchange pressure values at boundaries btw subdomain after each red/black iteration
         // collect the global residual from all processes after each iteration
         computePressure();
+        std::cout << "computePressure done; " << partitioning_->ownRankNo() << std::endl;
 
         // compute final velocities (each process independent from the others)
         computeVelocities();
+        std::cout << "computeVelocities done" << std::endl;
 
         // write output, only write text output in debug mode
         // TODO: write output only every n-th time step
@@ -148,6 +155,11 @@ void ComputationParallel::applyBoundaryValues()
     {
         exchangeVelocitiesTop();
     }
+
+    // wait for all send requests to finish
+    MPI_Waitall(sendRequestCounter_, sendRequests_.data(), MPI_STATUSES_IGNORE);
+    // wait for all receive requests to finish
+    MPI_Waitall(receiveRequestCounter_, receiveRequests_.data(), MPI_STATUSES_IGNORE);
 
     // set left boundary values
     if (partitioning_->ownPartitionContainsLeftBoundary())
@@ -298,6 +310,9 @@ void ComputationParallel::exchangeVelocitiesTop()
  */
 void ComputationParallel::exchangeVelocitiesLeft()
 {
+    MPI_Request rec_left_u;
+    MPI_Request rec_left_v;
+
     // get rank no of left neighbouring subdomain
     int leftNeigbhourRank = partitioning_->leftNeighbourRankNo();
 
@@ -326,10 +341,13 @@ void ComputationParallel::exchangeVelocitiesLeft()
 
     // overwrite column vectors for ghost layer column data of u and v
     // receive ghost layer column of u from left neighbouring subdomain
-    MPI_Irecv(&column_u, num_rows_u, MPI_DOUBLE, leftNeigbhourRank, 0, MPI_COMM_WORLD, &receiveRequests_[receiveRequestCounter_++]);
+    MPI_Irecv(&column_u, num_rows_u, MPI_DOUBLE, leftNeigbhourRank, 0, MPI_COMM_WORLD, &rec_left_u);
 
     // receive ghost layer column of v from left neighbouring subdomain
-    MPI_Irecv(&column_v, num_rows_v, MPI_DOUBLE, leftNeigbhourRank, 0, MPI_COMM_WORLD, &receiveRequests_[receiveRequestCounter_++]);
+    MPI_Irecv(&column_v, num_rows_v, MPI_DOUBLE, leftNeigbhourRank, 0, MPI_COMM_WORLD, &rec_left_v);
+
+    MPI_Wait(&rec_left_u, MPI_STATUS_IGNORE);
+    MPI_Wait(&rec_left_v, MPI_STATUS_IGNORE);
 
     // overwrite ghost layer column data of u and v
     for (int j = 0; j < num_rows_u; j++)
@@ -349,6 +367,9 @@ void ComputationParallel::exchangeVelocitiesLeft()
  */
 void ComputationParallel::exchangeVelocitiesRight()
 {
+    MPI_Request rec_right_u;
+    MPI_Request rec_right_v;
+
     // get rank no of right neighbouring subdomain
     int rightNeigbhourRank = partitioning_->rightNeighbourRankNo();
 
@@ -359,10 +380,13 @@ void ComputationParallel::exchangeVelocitiesRight()
     double* column_v = new double[num_rows_v];
 
     // receive first inner column of u from right neighbouring subdomain into right columns of current subdomain
-    MPI_Irecv(&column_u, num_rows_u, MPI_DOUBLE, rightNeigbhourRank, 0, MPI_COMM_WORLD, &receiveRequests_[receiveRequestCounter_++]);
+    MPI_Irecv(&column_u, num_rows_u, MPI_DOUBLE, rightNeigbhourRank, 0, MPI_COMM_WORLD, &rec_right_u);
 
     // receive first inner column of v from right neighbouring subdomain into right columns of current subdomain
-    MPI_Irecv(&column_v, num_rows_v, MPI_DOUBLE, rightNeigbhourRank, 0, MPI_COMM_WORLD, &receiveRequests_[receiveRequestCounter_++]);
+    MPI_Irecv(&column_v, num_rows_v, MPI_DOUBLE, rightNeigbhourRank, 0, MPI_COMM_WORLD, &rec_right_v);
+
+    MPI_Wait(&rec_right_u, MPI_STATUS_IGNORE);
+    MPI_Wait(&rec_right_v, MPI_STATUS_IGNORE);
 
     for (int j = 0; j < num_rows_u; j++)
     {
