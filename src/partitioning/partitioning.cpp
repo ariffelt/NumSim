@@ -63,7 +63,7 @@ void Partitioning::computeNodeOffset()
 // works also for rectangular domains
 void Partitioning::computePartitioning(int nRanks)
 {
-    assert(nRanks % 2 == 0);
+    assert(nRanks % 2 == 0 || nRanks == 1);
     assert(nRanks > 0);
 
     // compute optimal partitioning

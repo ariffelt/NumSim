@@ -1,5 +1,5 @@
 #include "settings/settings.h"
-#include "computation/computation.h"
+#include "computation/computation_parallel.h"
 
 /**
  * Entry point of simulation
@@ -21,10 +21,14 @@ int main(int argc, char *argv[])
     // print message
     std::cout << "Filename: \"" << filename << "\"" << std::endl;
 
+    MPI_Init(NULL, NULL);
+
     // create computation object and run simulation
-    Computation computation = Computation();
-    computation.initialize(argc, argv);
-    computation.runSimulation();
+    ComputationParallel computation_parallel = ComputationParallel();
+    computation_parallel.initialize(argc, argv);
+    computation_parallel.runSimulation();
+
+    MPI_Finalize();
 
     return EXIT_SUCCESS;
 }
