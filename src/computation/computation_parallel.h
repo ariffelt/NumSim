@@ -58,10 +58,4 @@ protected:
     std::unique_ptr<OutputWriterTextParallel> outputWriterTextParallel_;
 
     std::shared_ptr<Partitioning> partitioning_;
-
-    // initialize MPI requests
-    std::vector<MPI_Request> sendRequests_;
-    std::vector<MPI_Request> receiveRequests_;
-    int sendRequestCounter_ = 0;
-    int receiveRequestCounter_ = 0;
 };

@@ -74,6 +74,4 @@ void RedBlackSOR::solve()
     MPI_Allreduce(&res2_local, &res2_global, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
   } while (res2_global/(partitioning_->nRanks()) >= epsilon2 && iteration < maximumNumberOfIterations_);
-  
-  std::cout << "RedBlackSOR::solve() finished; " << partitioning_->ownRankNo() << std::endl;
 }
