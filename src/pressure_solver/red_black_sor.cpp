@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <iostream>
 
 RedBlackSOR::RedBlackSOR(std::shared_ptr<Discretization> discretization,
                          double epsilon, int maximumNumberOfIterations, double omega,

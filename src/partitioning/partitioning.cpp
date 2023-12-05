@@ -3,6 +3,7 @@
 #include <cassert>
 #include <vector>
 #include <cmath>
+#include <iostream>
 
 // compute partitioning, set internal variables
 void Partitioning::initialize(std::array<int, 2> nCellsGlobal)
