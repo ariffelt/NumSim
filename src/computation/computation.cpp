@@ -254,6 +254,9 @@ void Computation::computePreliminaryVelocities()
  */
 void Computation::computeRightHandSide()
 {
+    //int offsetRight = discretization_->getOffsetRight();
+    //int offsetTop = discretization_->getOffsetTop();
+
     for (int i = 1; i < discretization_->rhsSize()[0] - 1; i++)
     {
         for (int j = 1; j < discretization_->rhsSize()[1] - 1; j++)
@@ -279,8 +282,10 @@ void Computation::computePressure()
  */
 void Computation::computeVelocities()
 {
+    int offsetRight = discretization_->getOffsetRight();
+    int offsetTop = discretization_->getOffsetTop();
     // compute final u
-    for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1; i++)
+    for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1 + offsetRight; i++)
     {
         for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd(); j++)
         {
@@ -291,7 +296,7 @@ void Computation::computeVelocities()
     // compute final v
     for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd(); i++)
     {
-        for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1; j++)
+        for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1 + offsetTop; j++)
         {
             discretization_->v(i, j) = discretization_->g(i, j) - dt_ * (discretization_->p(i, j + 1) - discretization_->p(i, j)) / discretization_->dy();
         }
