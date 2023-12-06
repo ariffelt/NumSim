@@ -108,6 +108,14 @@ public:
     //! size of rhs
     std::array<int, 2> rhsSize() const;
 
+    int getOffsetLeft() const; //! TODO: delete if unnecessary
+
+    int getOffsetBottom() const; //! TODO: delete if unnecessary
+
+    int getOffsetRight() const;
+
+    int getOffsetTop() const;
+
 protected:
     const std::array<int, 2> nCells_;
     const std::array<double, 2> meshWidth_;

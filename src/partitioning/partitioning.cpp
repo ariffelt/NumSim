@@ -87,6 +87,10 @@ void Partitioning::computePartitioning(int nRanks)
             std::cout << "yOpt: " << yOpt << std::endl;
         }
     }
+    if (nCellsGlobal_[0] >= nCellsGlobal_[1])
+    {
+        std::swap(xOpt, yOpt);
+    }
     nDomains_ = {xOpt, yOpt};
 }
 

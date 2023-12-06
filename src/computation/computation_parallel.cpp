@@ -1,5 +1,6 @@
 #include "computation/computation_parallel.h"
 
+
 /**
  * Constructor for the Computation Parallel class.
  * Initializes the settings, discretization, pressure solver, partitioning and output writers
@@ -55,14 +56,15 @@ void ComputationParallel::runSimulation()
 
     while (t < settings_.endTime)
     {
-        std::cout << "Process " << partitioning_->ownRankNo() << ": t = " << t << std::endl;
+        //std::cout << "Process " << partitioning_->ownRankNo() << ": t = " << t << std::endl;
         // set boundary values for u, v, F and G and exchange values at borders btw subdomains
         // exchange velocities at boundaries btw subdomains
         applyBoundaryValues();
-
+        std::cout << "Process " << partitioning_->ownRankNo() << ": t = " << t << std::endl;
         // compute time step size dt (contributions from all processes)
         computeTimeStepWidthParallel();
-        
+        //computeTimeStepWidthAlt();
+        std::cout << "finished computeTimeStepWidth, Process" << partitioning_->ownRankNo() << std::endl;
         // decrease time step width in last time step, s.t. the end time will be reached exactly
         if (t + dt_ > settings_.endTime)        
         {
@@ -105,16 +107,79 @@ void ComputationParallel::computeTimeStepWidthParallel()
     // compute time step width dt from maximum velocities for each subdomain
     // use old method from Computation
     computeTimeStepWidth();
-
     // initialize global time step width and dt_ as local
     double dtGlobal;
     double dtLocal = dt_;
-
+    std::cout << "Before Allreduce in computeTimeStepWidth, Process " << partitioning_->ownRankNo() << ": dtLocal = " << dtLocal << std::endl;
     // reduce dtLocal to dtGlobal by taking the minimum over all subdomains
     MPI_Allreduce(&dtLocal, &dtGlobal, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+    std::cout << "After Allreduce in computeTimeStepWidth, Process " << partitioning_->ownRankNo() << ": dtLocal = " << dtLocal << std::endl;
 
     // set time step width to global minimum
     dt_ = dtGlobal;
+}
+
+void ComputationParallel::computeTimeStepWidthAlt() {
+    const double dx =  discretization_->dx();
+    const double dy =  discretization_->dy();
+
+    // Compute maximal time step width regarding the diffusion
+    double dt_diff = settings_.re / 2 / (1 / (dx * dx) + 1 / (dy * dy) );
+
+    double maxU = 0.0;
+    double maxV = 0.0;
+    // Compute maximal time step width regarding the convection u
+    std::array<int, 2> uSize = discretization_->uSize();
+    for (int i = 0; i < uSize[0]; i++)
+    {
+        for (int j = 0; j < uSize[1]; j++)
+        {
+            // possible because the grid for u and v have the same dimensions in all directions
+            maxU = std::max(maxU, std::fabs(discretization_->u(i, j)));
+            maxV = std::max(maxV, std::fabs(discretization_->v(i, j)));
+        }
+    }
+
+    
+    double u_absMax_local = maxU;
+
+    double u_absMax = 0.0;
+    
+    MPI_Allreduce(&u_absMax_local,
+                  &u_absMax,
+                  1,
+                  MPI_DOUBLE,
+                  MPI_MAX,
+                  MPI_COMM_WORLD
+    );
+    
+    double dt_conv_u = std::numeric_limits<double>::max();
+    if (u_absMax > 0.0)
+        dt_conv_u = dx / u_absMax;
+
+    
+    // Compute maximal time step width regarding the convection v
+    double v_absMax_local = maxV;
+
+    double v_absMax = 0.0;
+
+    MPI_Allreduce(&v_absMax_local,
+                  &v_absMax,
+                  1,
+                  MPI_DOUBLE,
+                  MPI_MAX,
+                  MPI_COMM_WORLD
+    );
+    std::cout << "u_absMax= "<< u_absMax << std::endl;
+    std::cout << "hier1, Process" << partitioning_->ownRankNo() << std::endl;
+    double dt_conv_v = std::numeric_limits<double>::max();
+    if (v_absMax > 0.0)
+        dt_conv_v = dy / v_absMax;
+    
+    // Set the appropriate time step width by using a security factor tau
+    std::cout << "hier2, Process" << partitioning_->ownRankNo() << std::endl;
+    dt_ = std::min(settings_.tau * std::min(dt_diff, std::min(dt_conv_u,dt_conv_v)), settings_.maximumDt);
+    std::cout << "hier3, Process" << partitioning_->ownRankNo() << std::endl;
 }
 
 /**
@@ -256,15 +321,15 @@ void ComputationParallel::exchangeVelocitiesBottom()
         MPI_DOUBLE, bottomNeigbhourRank, 0, MPI_COMM_WORLD, &send_bottom_u);
 
     // send first inner row of v to bottom neighbouring subdomain
-    MPI_Isend(&discretization_->v(discretization_->vIBegin(), discretization_->vJBegin() + 1), discretization_->vIEnd() - discretization_->vIBegin(), 
+    MPI_Isend(&discretization_->v(discretization_->vIBegin()+1, discretization_->vJBegin() + 1), discretization_->vIEnd() - discretization_->vIBegin()-1, 
         MPI_DOUBLE, bottomNeigbhourRank, 0, MPI_COMM_WORLD, &send_bottom_v);
 
     // receive ghost layer row of u from bottom neighbouring subdomain
-    MPI_Irecv(&discretization_->u(discretization_->uIBegin(), discretization_->uJBegin()), discretization_->uIEnd() - discretization_->uIBegin(), 
+    MPI_Irecv(&discretization_->u(discretization_->uIBegin()+1, discretization_->uJBegin()), discretization_->uIEnd() - discretization_->uIBegin()-1, 
         MPI_DOUBLE, bottomNeigbhourRank, 0, MPI_COMM_WORLD, &recv_bottom_u);
 
     // receive ghost layer row of v from bottom neighbouring subdomain
-    MPI_Irecv(&discretization_->v(discretization_->vIBegin(), discretization_->vJBegin()), discretization_->vIEnd() - discretization_->vIBegin(), 
+    MPI_Irecv(&discretization_->v(discretization_->vIBegin()+1, discretization_->vJBegin()), discretization_->vIEnd() - discretization_->vIBegin()-1, 
         MPI_DOUBLE, bottomNeigbhourRank, 0, MPI_COMM_WORLD, &recv_bottom_v);
 }
 
@@ -284,21 +349,23 @@ void ComputationParallel::exchangeVelocitiesTop()
     MPI_Request send_top_u;
     MPI_Request send_top_v;
 
+
     // receive first inner row of u from top neighbouring subdomain into last row of the current subdomain
     MPI_Irecv(&discretization_->u(discretization_->uIBegin(), discretization_->uJEnd()), discretization_->uIEnd() - discretization_->uIBegin(), 
         MPI_DOUBLE, topNeigbhourRank, 0, MPI_COMM_WORLD, &recv_top_u);
 
     // receive first inner row of v from top neighbouring subdomain into last row of the current subdomain
-    MPI_Irecv(&discretization_->v(discretization_->vIBegin(), discretization_->vJEnd()), discretization_->vIEnd() - discretization_->vIBegin(), 
+    MPI_Irecv(&discretization_->v(discretization_->vIBegin()+1, discretization_->vJEnd()), discretization_->vIEnd() - discretization_->vIBegin()-1, 
         MPI_DOUBLE, topNeigbhourRank, 0, MPI_COMM_WORLD, &recv_top_v);
 
     // send last inner row of u to ghost layer row of top neighbouring subdomain
-    MPI_Isend(&discretization_->u(discretization_->uIBegin(), discretization_->uJEnd() - 1), discretization_->uIEnd() - discretization_->uIBegin(), 
+    MPI_Isend(&discretization_->u(discretization_->uIBegin()+1, discretization_->uJEnd() - 1), discretization_->uIEnd() - discretization_->uIBegin()-1, 
         MPI_DOUBLE, topNeigbhourRank, 0, MPI_COMM_WORLD, &send_top_u);
 
     // send last inner row of v to ghost layer row of top neighbouring subdomain
-    MPI_Isend(&discretization_->v(discretization_->vIBegin(), discretization_->vJEnd() - 1), discretization_->vIEnd() - discretization_->vIBegin(), 
+    MPI_Isend(&discretization_->v(discretization_->vIBegin()+1, discretization_->vJEnd() - 1), discretization_->vIEnd() - discretization_->vIBegin()-1, 
         MPI_DOUBLE, topNeigbhourRank, 0, MPI_COMM_WORLD, &send_top_v);
+
 }
 
 /**
@@ -324,7 +391,7 @@ void ComputationParallel::exchangeVelocitiesLeft()
     double* column_v = new double[num_rows_v];
 
     // save column data for sending
-    for (int j = 0; j < num_rows_u; j++)
+    for (int j = 1; j < num_rows_u; j++)
     {
         column_u[j] = discretization_->u(discretization_->uIBegin() + 1, discretization_->uJBegin() + j);
     }
@@ -334,28 +401,28 @@ void ComputationParallel::exchangeVelocitiesLeft()
     }
 
     // send first inner column of u to left neighbouring subdomain
-    MPI_Isend(&column_u, num_rows_u, MPI_DOUBLE, leftNeigbhourRank, 0, MPI_COMM_WORLD, &send_left_u);
+    MPI_Isend(column_u, num_rows_u, MPI_DOUBLE, leftNeigbhourRank, 0, MPI_COMM_WORLD, &send_left_u);
 
     // send first inner column of v to left neighbouring subdomain
-    MPI_Isend(&column_v, num_rows_v, MPI_DOUBLE, leftNeigbhourRank, 0, MPI_COMM_WORLD, &send_left_v); 
+    MPI_Isend(column_v, num_rows_v, MPI_DOUBLE, leftNeigbhourRank, 0, MPI_COMM_WORLD, &send_left_v); 
 
 
     // overwrite column vectors for ghost layer column data of u and v
     // receive ghost layer column of u from left neighbouring subdomain
-    MPI_Irecv(&column_u, num_rows_u, MPI_DOUBLE, leftNeigbhourRank, 0, MPI_COMM_WORLD, &recv_left_u);
+    MPI_Irecv(column_u, num_rows_u, MPI_DOUBLE, leftNeigbhourRank, 0, MPI_COMM_WORLD, &recv_left_u);
 
     // receive ghost layer column of v from left neighbouring subdomain
-    MPI_Irecv(&column_v, num_rows_v, MPI_DOUBLE, leftNeigbhourRank, 0, MPI_COMM_WORLD, &recv_left_v);
+    MPI_Irecv(column_v, num_rows_v, MPI_DOUBLE, leftNeigbhourRank, 0, MPI_COMM_WORLD, &recv_left_v);
 
     MPI_Wait(&recv_left_u, MPI_STATUS_IGNORE);
     MPI_Wait(&recv_left_v, MPI_STATUS_IGNORE);
 
     // overwrite ghost layer column data of u and v
-    for (int j = 0; j < num_rows_u; j++)
+    for (int j = 1; j < num_rows_u; j++)
     {
         discretization_->u(discretization_->uIBegin(), discretization_->uJBegin() + j) = column_u[j];
     }
-    for (int j = 0; j < num_rows_v; j++)
+    for (int j = 1; j < num_rows_v; j++)
     {
         discretization_->v(discretization_->vIBegin(), discretization_->vJBegin() + j) = column_v[j];
     }
@@ -383,16 +450,19 @@ void ComputationParallel::exchangeVelocitiesRight()
     double* column_u = new double[num_rows_u];
     double* column_v = new double[num_rows_v];
 
+    //MPI_Wait(&recv_right_u, MPI_STATUS_IGNORE);
+    //MPI_Wait(&recv_right_v, MPI_STATUS_IGNORE);
+
     // receive first inner column of u from right neighbouring subdomain into right columns of current subdomain
-    MPI_Irecv(&column_u, num_rows_u, MPI_DOUBLE, rightNeigbhourRank, 0, MPI_COMM_WORLD, &recv_right_u);
+    MPI_Irecv(column_u, num_rows_u, MPI_DOUBLE, rightNeigbhourRank, 0, MPI_COMM_WORLD, &recv_right_u);
 
     // receive first inner column of v from right neighbouring subdomain into right columns of current subdomain
-    MPI_Irecv(&column_v, num_rows_v, MPI_DOUBLE, rightNeigbhourRank, 0, MPI_COMM_WORLD, &recv_right_v);
+    MPI_Irecv(column_v, num_rows_v, MPI_DOUBLE, rightNeigbhourRank, 0, MPI_COMM_WORLD, &recv_right_v);
 
     MPI_Wait(&recv_right_u, MPI_STATUS_IGNORE);
     MPI_Wait(&recv_right_v, MPI_STATUS_IGNORE);
 
-    for (int j = 0; j < num_rows_u; j++)
+    for (int j = 1; j < num_rows_u; j++)
     {
         // overwrite right columns of current subdomain
         discretization_->u(discretization_->uIEnd(), discretization_->uJBegin() + j) = column_u[j];
@@ -408,8 +478,9 @@ void ComputationParallel::exchangeVelocitiesRight()
     }
 
     // send last inner column of u to ghost layer column of right neighbouring subdomain
-    MPI_Isend(&column_u, num_rows_u, MPI_DOUBLE, rightNeigbhourRank, 0, MPI_COMM_WORLD, &send_right_u);
+    MPI_Isend(column_u, num_rows_u, MPI_DOUBLE, rightNeigbhourRank, 0, MPI_COMM_WORLD, &send_right_u);
 
     // send last inner column of v to ghost layer column of right neighbouring subdomain
-    MPI_Isend(&column_v, num_rows_v, MPI_DOUBLE, rightNeigbhourRank, 0, MPI_COMM_WORLD, &send_right_v);
+    MPI_Isend(column_v, num_rows_v, MPI_DOUBLE, rightNeigbhourRank, 0, MPI_COMM_WORLD, &send_right_v);
+
 }
