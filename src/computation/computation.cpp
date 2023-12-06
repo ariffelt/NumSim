@@ -220,7 +220,12 @@ void Computation::applyBoundaryValues()
 void Computation::computePreliminaryVelocities()
 {
     // compute preliminary F
-    for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1; i++)
+
+    int offsetRight = discretization_->getOffsetRight();
+    int offsetTop = discretization_->getOffsetTop();
+     //wenn wir nicht am Rand sind. soll es bei UIBegin starten  
+
+    for (int i = discretization_->uIBegin() + 1 ; i < discretization_->uIEnd() - 1 + offsetRight; i++)
     {
         for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd(); j++)
         {
@@ -234,7 +239,7 @@ void Computation::computePreliminaryVelocities()
     // compute preliminary G
     for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd(); i++)
     {
-        for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1; j++)
+        for (int j = discretization_->vJBegin() + 1 ; j < discretization_->vJEnd() - 1 + offsetTop; j++)
         {
             double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2vDx2(i, j) + discretization_->computeD2vDy2(i, j));
             double convectionTerms = discretization_->computeDuvDx(i, j) + discretization_->computeDv2Dy(i, j);

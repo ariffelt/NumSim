@@ -282,3 +282,39 @@ std::array<int, 2> StaggeredGrid::rhsSize() const
 {
     return {nCells_[0] + 2, nCells_[1] + 2};
 }
+
+int StaggeredGrid::getOffsetLeft() const
+{
+    if (partitioning_->ownPartitionContainsLeftBoundary())
+    {
+        return -1;
+    }
+    return 0;
+}
+
+int StaggeredGrid::getOffsetBottom() const
+{
+    if (partitioning_->ownPartitionContainsBottomBoundary())
+    {
+        return -1;
+    }
+    return 0;
+}
+
+int StaggeredGrid::getOffsetRight() const
+{
+    if (partitioning_->ownPartitionContainsRightBoundary())
+    {
+        return 0;
+    }
+    return 1;
+}
+
+int StaggeredGrid::getOffsetTop() const
+{
+    if (partitioning_->ownPartitionContainsTopBoundary())
+    {
+        return 0;
+    }
+    return 1;
+}

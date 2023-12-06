@@ -6,6 +6,7 @@
 
 #include "partitioning/partitioning.h"
 
+#include "discretization/1_discretization.h"
 #include "discretization/2_central_differences.h"
 #include "discretization/2_donor_cell.h"
 
@@ -27,6 +28,8 @@ protected:
 
     //! compute the time step width dt from maximum velocities
     void computeTimeStepWidthParallel();
+    void computeTimeStepWidthAlt();
+
 
     //! set boundary values for u, v, F and G and exchange values at borders btw subdomains
     void applyBoundaryValues();
