@@ -254,12 +254,12 @@ void Computation::computePreliminaryVelocities()
  */
 void Computation::computeRightHandSide()
 {
-    //int offsetRight = discretization_->getOffsetRight();
-    //int offsetTop = discretization_->getOffsetTop();
+    int offsetLeft = discretization_->getOffsetLeft(); 
+    int offsetBottom = discretization_->getOffsetBottom();
 
-    for (int i = 1; i < discretization_->rhsSize()[0] - 1; i++)
+    for (int i = 2 + offsetLeft; i < discretization_->rhsSize()[0] - 1; i++) //rhsSize()[0] = nCells_[0] + 2
     {
-        for (int j = 1; j < discretization_->rhsSize()[1] - 1; j++)
+        for (int j = 2 + offsetBottom; j < discretization_->rhsSize()[1] - 1; j++) //rhsSize()[1] = nCells_[1] + 2
         {
             double change_F = ((discretization_->f(i, j) - discretization_->f(i - 1, j)) / discretization_->dx());
             double change_G = ((discretization_->g(i, j) - discretization_->g(i, j - 1)) / discretization_->dy());
