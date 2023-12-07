@@ -331,6 +331,9 @@ void ComputationParallel::exchangeVelocitiesBottom()
     // receive ghost layer row of v from bottom neighbouring subdomain
     MPI_Irecv(&discretization_->v(discretization_->vIBegin()+1, discretization_->vJBegin()), discretization_->vIEnd() - discretization_->vIBegin()-1, 
         MPI_DOUBLE, bottomNeigbhourRank, 0, MPI_COMM_WORLD, &recv_bottom_v);
+
+    MPI_Wait(&recv_bottom_u, MPI_STATUS_IGNORE);
+    MPI_Wait(&recv_bottom_v, MPI_STATUS_IGNORE);
 }
 
 /**
@@ -366,6 +369,8 @@ void ComputationParallel::exchangeVelocitiesTop()
     MPI_Isend(&discretization_->v(discretization_->vIBegin()+1, discretization_->vJEnd() - 1), discretization_->vIEnd() - discretization_->vIBegin()-1, 
         MPI_DOUBLE, topNeigbhourRank, 0, MPI_COMM_WORLD, &send_top_v);
 
+    MPI_Wait(&recv_top_u, MPI_STATUS_IGNORE);
+    MPI_Wait(&recv_top_v, MPI_STATUS_IGNORE);
 }
 
 /**
