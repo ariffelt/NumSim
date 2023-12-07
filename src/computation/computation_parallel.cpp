@@ -1,7 +1,5 @@
 #include "computation/computation_parallel.h"
 
-#include <cmath>
-
 
 /**
  * Constructor for the Computation Parallel class.
@@ -55,18 +53,18 @@ void ComputationParallel::runSimulation()
 {
     // initialize variables
     double t = 0.0;
-    double last_printed_time = -1.0;
 
     while (t < settings_.endTime)
     {
+        //std::cout << "Process " << partitioning_->ownRankNo() << ": t = " << t << std::endl;
         // set boundary values for u, v, F and G and exchange values at borders btw subdomains
         // exchange velocities at boundaries btw subdomains
         applyBoundaryValues();
-        //std::cout << "Process " << partitioning_->ownRankNo() << ": t = " << t << std::endl;
+        std::cout << "Process " << partitioning_->ownRankNo() << ": t = " << t << std::endl;
         // compute time step size dt (contributions from all processes)
         computeTimeStepWidthParallel();
         //computeTimeStepWidthAlt();
-        //std::cout << "finished computeTimeStepWidth, Process" << partitioning_->ownRankNo() << std::endl;
+        std::cout << "finished computeTimeStepWidth, Process" << partitioning_->ownRankNo() << std::endl;
         // decrease time step width in last time step, s.t. the end time will be reached exactly
         if (t + dt_ > settings_.endTime)        
         {
@@ -90,32 +88,12 @@ void ComputationParallel::runSimulation()
 
         // write output, only write text output in debug mode
         // TODO: write output only every n-th time step
-
-        if (t - last_printed_time >= 1.0 || t == settings_.endTime){
-            outputWriterParaviewParallel_->writeFile(t);
-            last_printed_time = t;
-        }
         #ifndef NDEBUG
-        if (partitioning_->ownRankNo() == 0) {
-            // Create progress bar
-            std::cout << "\r" << std::flush;
-            int barWidth = 70;
-            double progress = t / settings_.endTime;
-            std::cout << "[";
-            int pos = barWidth * progress;
-            for (int i = 0; i < barWidth; ++i)
-            {
-                if (i < pos)
-                    std::cout << "=";
-                else if (i == pos)
-                    std::cout << ">";
-                else
-                    std::cout << " ";
-            }
-            std::cout << "] " << int(progress * 100.0) << " %\r" << std::flush;
-        }
+        outputWriterTextParallel_->writeFile(t);
+        outputWriterParaviewParallel_->writeFile(t);
+        #else
+        outputWriterParaviewParallel_->writeFile(t);
         #endif
-
     }
 }
 
@@ -132,77 +110,77 @@ void ComputationParallel::computeTimeStepWidthParallel()
     // initialize global time step width and dt_ as local
     double dtGlobal;
     double dtLocal = dt_;
-    // std::cout << "Before Allreduce in computeTimeStepWidth, Process " << partitioning_->ownRankNo() << ": dtLocal = " << dtLocal << std::endl;
+    std::cout << "Before Allreduce in computeTimeStepWidth, Process " << partitioning_->ownRankNo() << ": dtLocal = " << dtLocal << std::endl;
     // reduce dtLocal to dtGlobal by taking the minimum over all subdomains
     MPI_Allreduce(&dtLocal, &dtGlobal, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-    // std::cout << "After Allreduce in computeTimeStepWidth, Process " << partitioning_->ownRankNo() << ": dtLocal = " << dtLocal << std::endl;
+    std::cout << "After Allreduce in computeTimeStepWidth, Process " << partitioning_->ownRankNo() << ": dtLocal = " << dtLocal << std::endl;
 
     // set time step width to global minimum
     dt_ = dtGlobal;
 }
 
-// void ComputationParallel::computeTimeStepWidthAlt() {
-//     const double dx =  discretization_->dx();
-//     const double dy =  discretization_->dy();
+void ComputationParallel::computeTimeStepWidthAlt() {
+    const double dx =  discretization_->dx();
+    const double dy =  discretization_->dy();
 
-//     // Compute maximal time step width regarding the diffusion
-//     double dt_diff = settings_.re / 2 / (1 / (dx * dx) + 1 / (dy * dy) );
+    // Compute maximal time step width regarding the diffusion
+    double dt_diff = settings_.re / 2 / (1 / (dx * dx) + 1 / (dy * dy) );
 
-//     double maxU = 0.0;
-//     double maxV = 0.0;
-//     // Compute maximal time step width regarding the convection u
-//     std::array<int, 2> uSize = discretization_->uSize();
-//     for (int i = 0; i < uSize[0]; i++)
-//     {
-//         for (int j = 0; j < uSize[1]; j++)
-//         {
-//             // possible because the grid for u and v have the same dimensions in all directions
-//             maxU = std::max(maxU, std::fabs(discretization_->u(i, j)));
-//             maxV = std::max(maxV, std::fabs(discretization_->v(i, j)));
-//         }
-//     }
-
-    
-//     double u_absMax_local = maxU;
-
-//     double u_absMax = 0.0;
-    
-//     MPI_Allreduce(&u_absMax_local,
-//                   &u_absMax,
-//                   1,
-//                   MPI_DOUBLE,
-//                   MPI_MAX,
-//                   MPI_COMM_WORLD
-//     );
-    
-//     double dt_conv_u = std::numeric_limits<double>::max();
-//     if (u_absMax > 0.0)
-//         dt_conv_u = dx / u_absMax;
+    double maxU = 0.0;
+    double maxV = 0.0;
+    // Compute maximal time step width regarding the convection u
+    std::array<int, 2> uSize = discretization_->uSize();
+    for (int i = 0; i < uSize[0]; i++)
+    {
+        for (int j = 0; j < uSize[1]; j++)
+        {
+            // possible because the grid for u and v have the same dimensions in all directions
+            maxU = std::max(maxU, std::fabs(discretization_->u(i, j)));
+            maxV = std::max(maxV, std::fabs(discretization_->v(i, j)));
+        }
+    }
 
     
-//     // Compute maximal time step width regarding the convection v
-//     double v_absMax_local = maxV;
+    double u_absMax_local = maxU;
 
-//     double v_absMax = 0.0;
-
-//     MPI_Allreduce(&v_absMax_local,
-//                   &v_absMax,
-//                   1,
-//                   MPI_DOUBLE,
-//                   MPI_MAX,
-//                   MPI_COMM_WORLD
-//     );
-//     //std::cout << "u_absMax= "<< u_absMax << std::endl;
-//     //std::cout << "hier1, Process" << partitioning_->ownRankNo() << std::endl;
-//     double dt_conv_v = std::numeric_limits<double>::max();
-//     if (v_absMax > 0.0)
-//         dt_conv_v = dy / v_absMax;
+    double u_absMax = 0.0;
     
-//     // Set the appropriate time step width by using a security factor tau
-//     //std::cout << "hier2, Process" << partitioning_->ownRankNo() << std::endl;
-//     dt_ = std::min(settings_.tau * std::min(dt_diff, std::min(dt_conv_u,dt_conv_v)), settings_.maximumDt);
-//     //std::cout << "hier3, Process" << partitioning_->ownRankNo() << std::endl;
-// }
+    MPI_Allreduce(&u_absMax_local,
+                  &u_absMax,
+                  1,
+                  MPI_DOUBLE,
+                  MPI_MAX,
+                  MPI_COMM_WORLD
+    );
+    
+    double dt_conv_u = std::numeric_limits<double>::max();
+    if (u_absMax > 0.0)
+        dt_conv_u = dx / u_absMax;
+
+    
+    // Compute maximal time step width regarding the convection v
+    double v_absMax_local = maxV;
+
+    double v_absMax = 0.0;
+
+    MPI_Allreduce(&v_absMax_local,
+                  &v_absMax,
+                  1,
+                  MPI_DOUBLE,
+                  MPI_MAX,
+                  MPI_COMM_WORLD
+    );
+    std::cout << "u_absMax= "<< u_absMax << std::endl;
+    std::cout << "hier1, Process" << partitioning_->ownRankNo() << std::endl;
+    double dt_conv_v = std::numeric_limits<double>::max();
+    if (v_absMax > 0.0)
+        dt_conv_v = dy / v_absMax;
+    
+    // Set the appropriate time step width by using a security factor tau
+    std::cout << "hier2, Process" << partitioning_->ownRankNo() << std::endl;
+    dt_ = std::min(settings_.tau * std::min(dt_diff, std::min(dt_conv_u,dt_conv_v)), settings_.maximumDt);
+    std::cout << "hier3, Process" << partitioning_->ownRankNo() << std::endl;
+}
 
 /**
  * Set velocity boundary values for u, v, F and G
@@ -412,31 +390,10 @@ void ComputationParallel::exchangeVelocitiesLeft()
     MPI_Request recv_left_v;
 
     // create vectors for column data of u and v
-    int num_rows_v = discretization_->vJEnd() - discretization_->vJBegin() + 1;
     int num_rows_u = discretization_->uJEnd() - discretization_->uJBegin() + 1;
+    int num_rows_v = discretization_->vJEnd() - discretization_->vJBegin() + 1;
     double* column_u = new double[num_rows_u];
     double* column_v = new double[num_rows_v];
-    // std::fill_n(column_v, num_rows_v, 0);
-    // std::fill_n(column_u, num_rows_u, 0);
-
-    // std::cout << "Rank " << partitioning_->ownRankNo() << ": num_rows_u = " << num_rows_u << std::endl;
-    // std::cout << "Rank " << partitioning_->ownRankNo() << ": num_rows_v = " << num_rows_v << std::endl;
-    // std::cout << "1. column_v = [";
-    // for (int i = 0; i < num_rows_v; i++) {
-    //     std::cout << column_v[i];
-    //     if (i < num_rows_v - 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
-    // std::cout << "1. column_u = [";
-    // for (int i = 0; i < num_rows_u; i++) {
-    //     std::cout << column_u[i];
-    //     if (i < num_rows_u - 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
 
     // save column data for sending
     for (int j = 0; j < num_rows_u; j++)
@@ -447,23 +404,6 @@ void ComputationParallel::exchangeVelocitiesLeft()
     {
         column_v[j] = discretization_->v(discretization_->vIBegin() + 1, discretization_->vJBegin() + j);
     }
-
-    // std::cout << "2. column_v = [";
-    // for (int i = 0; i < num_rows_v; i++) {
-    //     std::cout << column_v[i];
-    //     if (i < num_rows_v - 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
-    // std::cout << "2. column_u = [";
-    // for (int i = 0; i < num_rows_u; i++) {
-    //     std::cout << column_u[i];
-    //     if (i < num_rows_u - 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
 
     // send first inner column of u to left neighbouring subdomain
     MPI_Isend(column_u, num_rows_u, MPI_DOUBLE, leftNeigbhourRank, 0, MPI_COMM_WORLD, &send_left_u);
@@ -479,42 +419,8 @@ void ComputationParallel::exchangeVelocitiesLeft()
     // receive ghost layer column of v from left neighbouring subdomain
     MPI_Irecv(column_v, num_rows_v, MPI_DOUBLE, leftNeigbhourRank, 0, MPI_COMM_WORLD, &recv_left_v);
 
-    // std::cout << "3. column_v = [";
-    // for (int i = 0; i < num_rows_v; i++) {
-    //     std::cout << column_v[i];
-    //     if (i < num_rows_v - 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
-    // std::cout << "3. column_u = [";
-    // for (int i = 0; i < num_rows_u; i++) {
-    //     std::cout << column_u[i];
-    //     if (i < num_rows_u - 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
-
     MPI_Wait(&recv_left_u, MPI_STATUS_IGNORE);
     MPI_Wait(&recv_left_v, MPI_STATUS_IGNORE);
-
-    // std::cout << "4. column_v = [";
-    // for (int i = 0; i < num_rows_v; i++) {
-    //     std::cout << column_v[i];
-    //     if (i < num_rows_v - 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
-    // std::cout << "4. column_u = [";
-    // for (int i = 0; i < num_rows_u; i++) {
-    //     std::cout << column_u[i];
-    //     if (i < num_rows_u - 1) {
-    //         std::cout << ", ";
-    //     }
-    // }
-    // std::cout << "]" << std::endl;
 
     // overwrite ghost layer column data of u and v
     for (int j = 0; j < num_rows_u; j++)
