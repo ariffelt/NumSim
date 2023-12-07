@@ -95,7 +95,7 @@ void ComputationParallel::runSimulation()
             outputWriterParaviewParallel_->writeFile(t);
             last_printed_time = t;
         }
-        #ifdef DEBUG
+        #ifdef NDEBUG
         if (partitioning_->ownRankNo() == 0) {
             // Create progress bar
             std::cout << "\r" << std::flush;
