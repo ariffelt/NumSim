@@ -1,5 +1,7 @@
 #include "computation/computation_parallel.h"
 
+#include <cmath>
+
 
 /**
  * Constructor for the Computation Parallel class.
@@ -53,18 +55,18 @@ void ComputationParallel::runSimulation()
 {
     // initialize variables
     double t = 0.0;
+    double last_printed_time = 0.0;
 
     while (t < settings_.endTime)
     {
-        //std::cout << "Process " << partitioning_->ownRankNo() << ": t = " << t << std::endl;
         // set boundary values for u, v, F and G and exchange values at borders btw subdomains
         // exchange velocities at boundaries btw subdomains
         applyBoundaryValues();
-        std::cout << "Process " << partitioning_->ownRankNo() << ": t = " << t << std::endl;
+        //std::cout << "Process " << partitioning_->ownRankNo() << ": t = " << t << std::endl;
         // compute time step size dt (contributions from all processes)
         computeTimeStepWidthParallel();
         //computeTimeStepWidthAlt();
-        std::cout << "finished computeTimeStepWidth, Process" << partitioning_->ownRankNo() << std::endl;
+        //std::cout << "finished computeTimeStepWidth, Process" << partitioning_->ownRankNo() << std::endl;
         // decrease time step width in last time step, s.t. the end time will be reached exactly
         if (t + dt_ > settings_.endTime)        
         {
@@ -88,12 +90,30 @@ void ComputationParallel::runSimulation()
 
         // write output, only write text output in debug mode
         // TODO: write output only every n-th time step
-        #ifndef NDEBUG
-        outputWriterTextParallel_->writeFile(t);
-        outputWriterParaviewParallel_->writeFile(t);
-        #else
-        outputWriterParaviewParallel_->writeFile(t);
-        #endif
+
+        if (t - last_printed_time >=1.0){
+            outputWriterParaviewParallel_->writeFile(t);
+            last_printed_time = t;
+        }
+        if (partitioning_->ownRankNo() == 0) {
+            // Create progress bar
+            std::cout << "\r" << std::flush;
+            int barWidth = 70;
+            double progress = t / settings_.endTime;
+            std::cout << "[";
+            int pos = barWidth * progress;
+            for (int i = 0; i < barWidth; ++i)
+            {
+                if (i < pos)
+                    std::cout << "=";
+                else if (i == pos)
+                    std::cout << ">";
+                else
+                    std::cout << " ";
+            }
+            std::cout << "] " << int(progress * 100.0) << " %\r" << std::flush;
+        }
+
     }
 }
 
@@ -110,10 +130,10 @@ void ComputationParallel::computeTimeStepWidthParallel()
     // initialize global time step width and dt_ as local
     double dtGlobal;
     double dtLocal = dt_;
-    std::cout << "Before Allreduce in computeTimeStepWidth, Process " << partitioning_->ownRankNo() << ": dtLocal = " << dtLocal << std::endl;
+    // std::cout << "Before Allreduce in computeTimeStepWidth, Process " << partitioning_->ownRankNo() << ": dtLocal = " << dtLocal << std::endl;
     // reduce dtLocal to dtGlobal by taking the minimum over all subdomains
     MPI_Allreduce(&dtLocal, &dtGlobal, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-    std::cout << "After Allreduce in computeTimeStepWidth, Process " << partitioning_->ownRankNo() << ": dtLocal = " << dtLocal << std::endl;
+    // std::cout << "After Allreduce in computeTimeStepWidth, Process " << partitioning_->ownRankNo() << ": dtLocal = " << dtLocal << std::endl;
 
     // set time step width to global minimum
     dt_ = dtGlobal;
@@ -170,16 +190,16 @@ void ComputationParallel::computeTimeStepWidthAlt() {
                   MPI_MAX,
                   MPI_COMM_WORLD
     );
-    std::cout << "u_absMax= "<< u_absMax << std::endl;
-    std::cout << "hier1, Process" << partitioning_->ownRankNo() << std::endl;
+    //std::cout << "u_absMax= "<< u_absMax << std::endl;
+    //std::cout << "hier1, Process" << partitioning_->ownRankNo() << std::endl;
     double dt_conv_v = std::numeric_limits<double>::max();
     if (v_absMax > 0.0)
         dt_conv_v = dy / v_absMax;
     
     // Set the appropriate time step width by using a security factor tau
-    std::cout << "hier2, Process" << partitioning_->ownRankNo() << std::endl;
+    //std::cout << "hier2, Process" << partitioning_->ownRankNo() << std::endl;
     dt_ = std::min(settings_.tau * std::min(dt_diff, std::min(dt_conv_u,dt_conv_v)), settings_.maximumDt);
-    std::cout << "hier3, Process" << partitioning_->ownRankNo() << std::endl;
+    //std::cout << "hier3, Process" << partitioning_->ownRankNo() << std::endl;
 }
 
 /**
@@ -390,13 +410,34 @@ void ComputationParallel::exchangeVelocitiesLeft()
     MPI_Request recv_left_v;
 
     // create vectors for column data of u and v
-    int num_rows_u = discretization_->uJEnd() - discretization_->uJBegin();
-    int num_rows_v = discretization_->vJEnd() - discretization_->vJBegin();
+    int num_rows_v = discretization_->vJEnd() - discretization_->vJBegin() + 1;
+    int num_rows_u = discretization_->uJEnd() - discretization_->uJBegin() + 1;
     double* column_u = new double[num_rows_u];
     double* column_v = new double[num_rows_v];
+    // std::fill_n(column_v, num_rows_v, 0);
+    // std::fill_n(column_u, num_rows_u, 0);
+
+    // std::cout << "Rank " << partitioning_->ownRankNo() << ": num_rows_u = " << num_rows_u << std::endl;
+    // std::cout << "Rank " << partitioning_->ownRankNo() << ": num_rows_v = " << num_rows_v << std::endl;
+    // std::cout << "1. column_v = [";
+    // for (int i = 0; i < num_rows_v; i++) {
+    //     std::cout << column_v[i];
+    //     if (i < num_rows_v - 1) {
+    //         std::cout << ", ";
+    //     }
+    // }
+    // std::cout << "]" << std::endl;
+    // std::cout << "1. column_u = [";
+    // for (int i = 0; i < num_rows_u; i++) {
+    //     std::cout << column_u[i];
+    //     if (i < num_rows_u - 1) {
+    //         std::cout << ", ";
+    //     }
+    // }
+    // std::cout << "]" << std::endl;
 
     // save column data for sending
-    for (int j = 1; j < num_rows_u; j++)
+    for (int j = 0; j < num_rows_u; j++)
     {
         column_u[j] = discretization_->u(discretization_->uIBegin() + 1, discretization_->uJBegin() + j);
     }
@@ -404,6 +445,23 @@ void ComputationParallel::exchangeVelocitiesLeft()
     {
         column_v[j] = discretization_->v(discretization_->vIBegin() + 1, discretization_->vJBegin() + j);
     }
+
+    // std::cout << "2. column_v = [";
+    // for (int i = 0; i < num_rows_v; i++) {
+    //     std::cout << column_v[i];
+    //     if (i < num_rows_v - 1) {
+    //         std::cout << ", ";
+    //     }
+    // }
+    // std::cout << "]" << std::endl;
+    // std::cout << "2. column_u = [";
+    // for (int i = 0; i < num_rows_u; i++) {
+    //     std::cout << column_u[i];
+    //     if (i < num_rows_u - 1) {
+    //         std::cout << ", ";
+    //     }
+    // }
+    // std::cout << "]" << std::endl;
 
     // send first inner column of u to left neighbouring subdomain
     MPI_Isend(column_u, num_rows_u, MPI_DOUBLE, leftNeigbhourRank, 0, MPI_COMM_WORLD, &send_left_u);
@@ -419,15 +477,49 @@ void ComputationParallel::exchangeVelocitiesLeft()
     // receive ghost layer column of v from left neighbouring subdomain
     MPI_Irecv(column_v, num_rows_v, MPI_DOUBLE, leftNeigbhourRank, 0, MPI_COMM_WORLD, &recv_left_v);
 
+    // std::cout << "3. column_v = [";
+    // for (int i = 0; i < num_rows_v; i++) {
+    //     std::cout << column_v[i];
+    //     if (i < num_rows_v - 1) {
+    //         std::cout << ", ";
+    //     }
+    // }
+    // std::cout << "]" << std::endl;
+    // std::cout << "3. column_u = [";
+    // for (int i = 0; i < num_rows_u; i++) {
+    //     std::cout << column_u[i];
+    //     if (i < num_rows_u - 1) {
+    //         std::cout << ", ";
+    //     }
+    // }
+    // std::cout << "]" << std::endl;
+
     MPI_Wait(&recv_left_u, MPI_STATUS_IGNORE);
     MPI_Wait(&recv_left_v, MPI_STATUS_IGNORE);
 
+    // std::cout << "4. column_v = [";
+    // for (int i = 0; i < num_rows_v; i++) {
+    //     std::cout << column_v[i];
+    //     if (i < num_rows_v - 1) {
+    //         std::cout << ", ";
+    //     }
+    // }
+    // std::cout << "]" << std::endl;
+    // std::cout << "4. column_u = [";
+    // for (int i = 0; i < num_rows_u; i++) {
+    //     std::cout << column_u[i];
+    //     if (i < num_rows_u - 1) {
+    //         std::cout << ", ";
+    //     }
+    // }
+    // std::cout << "]" << std::endl;
+
     // overwrite ghost layer column data of u and v
-    for (int j = 1; j < num_rows_u; j++)
+    for (int j = 0; j < num_rows_u; j++)
     {
         discretization_->u(discretization_->uIBegin(), discretization_->uJBegin() + j) = column_u[j];
     }
-    for (int j = 1; j < num_rows_v; j++)
+    for (int j = 0; j < num_rows_v; j++)
     {
         discretization_->v(discretization_->vIBegin(), discretization_->vJBegin() + j) = column_v[j];
     }
@@ -450,8 +542,8 @@ void ComputationParallel::exchangeVelocitiesRight()
     MPI_Request send_right_v;
 
     // create vectors for column data of u and v
-    int num_rows_u = discretization_->uJEnd() - discretization_->uJBegin();
-    int num_rows_v = discretization_->vJEnd() - discretization_->vJBegin();
+    int num_rows_u = discretization_->uJEnd() - discretization_->uJBegin() + 1;
+    int num_rows_v = discretization_->vJEnd() - discretization_->vJBegin() + 1;
     double* column_u = new double[num_rows_u];
     double* column_v = new double[num_rows_v];
 
@@ -467,7 +559,7 @@ void ComputationParallel::exchangeVelocitiesRight()
     MPI_Wait(&recv_right_u, MPI_STATUS_IGNORE);
     MPI_Wait(&recv_right_v, MPI_STATUS_IGNORE);
 
-    for (int j = 1; j < num_rows_u; j++)
+    for (int j = 0; j < num_rows_u; j++)
     {
         // overwrite right columns of current subdomain
         discretization_->u(discretization_->uIEnd(), discretization_->uJBegin() + j) = column_u[j];
