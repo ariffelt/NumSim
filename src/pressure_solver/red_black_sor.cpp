@@ -22,7 +22,7 @@ void RedBlackSOR::solve()
   const double prefactor = hx2 * hy2 / (2 * (hx2 + hy2));
 
   double res2 = getResidual();
-  //std::cout << "RedBlackSOR::solve() after getResidual(); " << partitioning_->ownRankNo() << ", res2 = " << res2 << std::endl;
+  std::cout << "RedBlackSOR::solve() after getResidual(); " << partitioning_->ownRankNo() << ", res2 = " << res2 << std::endl;
 
   // set initial values
   int iteration = 0;
@@ -56,6 +56,7 @@ void RedBlackSOR::solve()
     {
       // one further on the right than before
       for (int i = discretization_->pIBegin() + ((j-1) % 2) + 1; i < discretization_->pIEnd(); i += 2)
+      //for (int i = discretization_->pIBegin() + 1 +(j % 2) + 1; i < discretization_->pIEnd(); i += 2)
       {
         double px = (discretization_->p(i - 1, j) + discretization_->p(i + 1, j)) / (hx2);
         double py = (discretization_->p(i, j - 1) + discretization_->p(i, j + 1)) / (hy2);

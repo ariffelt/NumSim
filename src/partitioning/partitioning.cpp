@@ -16,7 +16,7 @@ void Partitioning::initialize(std::array<int, 2> nCellsGlobal)
     //MPI_Dims_create(nRanks_, 2, nDomains_.data());
     computePartitioning(nRanks_);
 
-    //std::cout << "nDomains: [" << nDomains_[0] << "," << nDomains_[1] << "]" << std::endl;
+    std::cout << "nDomains: [" << nDomains_[0] << "," << nDomains_[1] << "]" << std::endl;
 
     // compute local number of cells
     nCellsLocal_ = std::array<int,2>{nCellsGlobal_[0] / nDomains_[0], nCellsGlobal_[1] / nDomains_[1]};
@@ -83,8 +83,8 @@ void Partitioning::computePartitioning(int nRanks)
                 xOpt = x;
                 yOpt = y;
             }
-            //std::cout << "xOpt: " << xOpt << std::endl;
-            //std::cout << "yOpt: " << yOpt << std::endl;
+            std::cout << "xOpt: " << xOpt << std::endl;
+            std::cout << "yOpt: " << yOpt << std::endl;
         }
     }
     if (nCellsGlobal_[0] >= nCellsGlobal_[1])
@@ -341,5 +341,3 @@ std::array<int, 2> Partitioning::nodeOffset() const
 {
     return nodeOffset_;
 }
-
-
