@@ -22,7 +22,7 @@ void RedBlackSOR::solve()
   const double prefactor = hx2 * hy2 / (2 * (hx2 + hy2));
 
   double res2 = getResidual();
-  std::cout << "RedBlackSOR::solve() after getResidual(); " << partitioning_->ownRankNo() << ", res2 = " << res2 << std::endl;
+  //std::cout << "RedBlackSOR::solve() after getResidual(); " << partitioning_->ownRankNo() << ", res2 = " << res2 << std::endl;
 
   // set initial values
   int iteration = 0;

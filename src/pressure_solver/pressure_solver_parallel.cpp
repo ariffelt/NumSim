@@ -41,7 +41,7 @@ void PressureSolverParallel::sendAndBorrowValues()
     else
     {
         // send bottom cells
-        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd(); i++)
+        for (int i = discretization_->pIBegin(); i < discretization_->pIEnd(); i++)
         { // dont overwrite the first and last value
             p_bottom[i] = discretization_->p(i, discretization_->pJBegin() + 1);
         }
@@ -52,7 +52,7 @@ void PressureSolverParallel::sendAndBorrowValues()
         partitioning_->MPI_irecv(partitioning_->bottomNeighbourRankNo(), p_bottom, length_p_bottomtop, req_p_bottom);
         // set bottom cells
         MPI_Wait(&req_p_bottom, MPI_STATUS_IGNORE); // wait for receive to finish
-        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd(); i++)
+        for (int i = discretization_->pIBegin(); i < discretization_->pIEnd(); i++)
         {
             discretization_->p(i, discretization_->pJBegin()) = p_bottom[i];
         }
@@ -72,7 +72,7 @@ void PressureSolverParallel::sendAndBorrowValues()
     else
     {
         // send left cells
-        for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd(); j++)
+        for (int j = discretization_->pJBegin(); j < discretization_->pJEnd(); j++)
         { // dont overwrite the first and last value
             p_left[j] = discretization_->p(discretization_->pIBegin() + 1, j);
         }
@@ -82,7 +82,7 @@ void PressureSolverParallel::sendAndBorrowValues()
         partitioning_->MPI_irecv(partitioning_->leftNeighbourRankNo(), p_left, length_p_leftright, req_p_left);
         // set left cells
         MPI_Wait(&req_p_left, MPI_STATUS_IGNORE); // wait for receive to finish
-        for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd(); j++)
+        for (int j = discretization_->pJBegin(); j < discretization_->pJEnd(); j++)
         {
             discretization_->p(discretization_->pIBegin(), j) = p_left[j];
         }
@@ -109,7 +109,7 @@ void PressureSolverParallel::sendAndBorrowValues()
     else
     {
         // send top cells
-        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd(); i++)
+        for (int i = discretization_->pIBegin(); i < discretization_->pIEnd(); i++)
         { // dont overwrite the first and last value
             p_top[i] = discretization_->p(i, discretization_->pJEnd() - 1);
         }
@@ -119,7 +119,7 @@ void PressureSolverParallel::sendAndBorrowValues()
         partitioning_->MPI_irecv(partitioning_->topNeighbourRankNo(), p_top, length_p_bottomtop, req_p_top);
         // set top cells
         MPI_Wait(&req_p_top, MPI_STATUS_IGNORE); // wait for receive to finish
-        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd(); i++)
+        for (int i = discretization_->pIBegin(); i < discretization_->pIEnd(); i++)
         {
             discretization_->p(i, discretization_->pJEnd()) = p_top[i];
         }
@@ -136,7 +136,7 @@ void PressureSolverParallel::sendAndBorrowValues()
     else
     {
         // send right cells
-        for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd(); j++)
+        for (int j = discretization_->pJBegin(); j < discretization_->pJEnd(); j++)
         { // dont overwrite the first and last value
             p_right[j] = discretization_->p(discretization_->pIEnd() - 1, j);
         }
@@ -146,7 +146,7 @@ void PressureSolverParallel::sendAndBorrowValues()
         partitioning_->MPI_irecv(partitioning_->rightNeighbourRankNo(), p_right, length_p_leftright, req_p_right);
         // set right cells
         MPI_Wait(&req_p_right, MPI_STATUS_IGNORE); // wait for receive to finish
-        for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd(); j++)
+        for (int j = discretization_->pJBegin(); j < discretization_->pJEnd(); j++)
         {
             discretization_->p(discretization_->pIEnd(), j) = p_right[j];
         }
