@@ -112,9 +112,16 @@ public:
 
     int getOffsetBottom() const; //! TODO: delete if unnecessary
 
+    int getOffsetLeft_rhs() const; //! TODO: delete if unnecessary
+
+    int getOffsetBottom_rhs() const; //! TODO: delete if unnecessary
+
     int getOffsetRight() const;
 
     int getOffsetTop() const;
+
+    int sor_offset() const;
+
 
 protected:
     const std::array<int, 2> nCells_;

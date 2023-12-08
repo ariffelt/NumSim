@@ -220,12 +220,29 @@ void Computation::applyBoundaryValues()
 void Computation::computePreliminaryVelocities()
 {
     // compute preliminary F
-
     int offsetRight = discretization_->getOffsetRight();
-    int offsetTop = discretization_->getOffsetTop();
-     //wenn wir nicht am Rand sind. soll es bei UIBegin starten  
+    // getOffsetRight()
+    // if (partitioning_->ownPartitionContainsRightBoundary()){return 0;}
+    // return 1;
 
-    for (int i = discretization_->uIBegin() + 1 ; i < discretization_->uIEnd() - 1 + offsetRight; i++)
+    int offsetTop = discretization_->getOffsetTop(); //to shift vJEnd
+    // getOffsetTop()
+    // if (partitioning_->ownPartitionContainsTopBoundary()){return 0;}
+    // return 1;
+
+    int offsetBottom = discretization_->getOffsetBottom(); //to shift vJBegin
+    // getOffsetBottom()
+    // if (partitioning_->ownPartitionContainsBottomBoundary()){return 0;}
+    // return -1;
+    
+    int offsetLeft = discretization_->getOffsetLeft(); //to shift uIBegin
+    // getOffsetRight()
+    // if (partitioning_->ownPartitionContainsLeftBoundary()){return 0;}
+    // return -1;
+
+    //for (int i = discretization_->uIBegin() + 2 + offsetLeft; i < discretization_->uIEnd() - 1 + offsetRight; i++)
+    for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1 + offsetRight; i++)
+    //for (int i = discretization_->uIBegin() + 2; i < discretization_->uIEnd() - 1 + offsetRight; i++)
     {
         for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd(); j++)
         {
@@ -239,7 +256,8 @@ void Computation::computePreliminaryVelocities()
     // compute preliminary G
     for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd(); i++)
     {
-        for (int j = discretization_->vJBegin() + 1 ; j < discretization_->vJEnd() - 1 + offsetTop; j++)
+        //for (int j = discretization_->vJBegin() + 2  + offsetBottom; j < discretization_->vJEnd() - 1 + offsetTop; j++)
+        for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1 + offsetTop; j++)
         {
             double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2vDx2(i, j) + discretization_->computeD2vDy2(i, j));
             double convectionTerms = discretization_->computeDuvDx(i, j) + discretization_->computeDv2Dy(i, j);
@@ -254,14 +272,32 @@ void Computation::computePreliminaryVelocities()
  */
 void Computation::computeRightHandSide()
 {
-    int offsetLeft = discretization_->getOffsetLeft(); 
-    int offsetBottom = discretization_->getOffsetBottom();
+    int offsetLeft_rhs = discretization_->getOffsetLeft_rhs(); 
+    // getOffsetLeft_rhs(){if (partitioning_->ownPartitionContainsLeftBoundary())return -1
+    // return 0;
 
-    for (int i = 2 + offsetLeft; i < discretization_->rhsSize()[0] - 1; i++) //rhsSize()[0] = nCells_[0] + 2
+    int offsetBottom_rhs = discretization_->getOffsetBottom_rhs();
+    // getOffsetBottom_rhs()if (partitioning_->ownPartitionContainsBottomBoundary()){return -1;}
+    // return 0;
+
+    //for (int i = 2 + offsetLeft_rhs; i < discretization_->rhsSize()[0] - 1; i++) //rhsSize()[0] = nCells_[0] + 2
+    for (int i = 1 ; i < discretization_->rhsSize()[0] - 1; i++) //rhsSize()[0] = nCells_[0] + 2
+    //for (int i = 2; i < discretization_->rhsSize()[0] - 1; i++) //rhsSize()[0] = nCells_[0] + 2
+    //for (int i = 2 ; i < discretization_->rhsSize()[0]; i++) //rhsSize()[0] = nCells_[0] + 2
+
     {
-        for (int j = 2 + offsetBottom; j < discretization_->rhsSize()[1] - 1; j++) //rhsSize()[1] = nCells_[1] + 2
+        //for (int j = 2 + offsetBottom_rhs; j < discretization_->rhsSize()[1] - 1; j++) //rhsSize()[1] = nCells_[1] + 2
+        for (int j = 1 ; j < discretization_->rhsSize()[1] - 1; j++) //rhsSize()[1] = nCells_[1] + 2
+        //for (int j = 2; j < discretization_->rhsSize()[1] - 1; j++) //rhsSize()[1] = nCells_[1] + 2
+        //for (int j = 2 ; j < discretization_->rhsSize()[1]; j++) //rhsSize()[1] = nCells_[1] + 2
         {
+            //double change_F = 0.0;
+            //if (i == 1 && offsetLeft == 0){
+            //    change_F = ((discretization_->f(i + 1, j) - discretization_->f(i, j)) / discretization_->dx());
+            //}
+            //else {
             double change_F = ((discretization_->f(i, j) - discretization_->f(i - 1, j)) / discretization_->dx());
+            //}
             double change_G = ((discretization_->g(i, j) - discretization_->g(i, j - 1)) / discretization_->dy());
 
             discretization_->rhs(i, j) = (change_F + change_G) / dt_;
@@ -284,7 +320,19 @@ void Computation::computeVelocities()
 {
     int offsetRight = discretization_->getOffsetRight();
     int offsetTop = discretization_->getOffsetTop();
+
+    int offsetBottom = discretization_->getOffsetBottom(); //to shift vJBegin
+    // getOffsetBottom()
+    // if (partitioning_->ownPartitionContainsBottomBoundary()){return 0;}
+    // return -1;
+    
+    int offsetLeft = discretization_->getOffsetLeft(); //to shift uIBegin
+    // getOffsetRight()
+    // if (partitioning_->ownPartitionContainsLeftBoundary()){return 0;}
+    // return -1;
+
     // compute final u
+    //for (int i = discretization_->uIBegin() + 2 + offsetLeft; i < discretization_->uIEnd() - 1 + offsetRight; i++)
     for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1 + offsetRight; i++)
     {
         for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd(); j++)
@@ -296,6 +344,7 @@ void Computation::computeVelocities()
     // compute final v
     for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd(); i++)
     {
+        //for (int j = discretization_->vJBegin() + 2 + offsetBottom; j < discretization_->vJEnd() - 1 + offsetTop; j++)
         for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1 + offsetTop; j++)
         {
             discretization_->v(i, j) = discretization_->g(i, j) - dt_ * (discretization_->p(i, j + 1) - discretization_->p(i, j)) / discretization_->dy();
