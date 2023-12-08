@@ -53,6 +53,7 @@ void ComputationParallel::runSimulation()
 {
     // initialize variables
     double t = 0.0;
+    double last_printed_time = -1.0;
 
     while (t < settings_.endTime)
     {
@@ -60,6 +61,9 @@ void ComputationParallel::runSimulation()
         // set boundary values for u, v, F and G and exchange values at borders btw subdomains
         // exchange velocities at boundaries btw subdomains
         applyBoundaryValues();
+        //if (t == 0.0) {
+        //    discretization_->f(0, discretization_->uJEnd()-1) = 0.005; //discretization_->f(discretization_->uIBegin() + 1, j); 
+        //}
         std::cout << "Process " << partitioning_->ownRankNo() << ": t = " << t << std::endl;
         // compute time step size dt (contributions from all processes)
         computeTimeStepWidthParallel();
@@ -85,15 +89,20 @@ void ComputationParallel::runSimulation()
 
         // compute final velocities (each process independent from the others)
         computeVelocities();
-
+        // write output, only write text output in debug mode
+        if (t - last_printed_time >= 1.0 || t == settings_.endTime){
+            outputWriterParaviewParallel_->writeFile(t);
+            last_printed_time = t;
+        }
+        outputWriterTextParallel_->writeFile(t);
         // write output, only write text output in debug mode
         // TODO: write output only every n-th time step
-        #ifndef NDEBUG
-        outputWriterTextParallel_->writeFile(t);
-        outputWriterParaviewParallel_->writeFile(t);
-        #else
-        outputWriterParaviewParallel_->writeFile(t);
-        #endif
+        // #ifndef NDEBUG
+        // outputWriterTextParallel_->writeFile(t);
+        // outputWriterParaviewParallel_->writeFile(t);
+        // #else
+        // outputWriterParaviewParallel_->writeFile(t);
+        // #endif
     }
 }
 
@@ -119,68 +128,6 @@ void ComputationParallel::computeTimeStepWidthParallel()
     dt_ = dtGlobal;
 }
 
-void ComputationParallel::computeTimeStepWidthAlt() {
-    const double dx =  discretization_->dx();
-    const double dy =  discretization_->dy();
-
-    // Compute maximal time step width regarding the diffusion
-    double dt_diff = settings_.re / 2 / (1 / (dx * dx) + 1 / (dy * dy) );
-
-    double maxU = 0.0;
-    double maxV = 0.0;
-    // Compute maximal time step width regarding the convection u
-    std::array<int, 2> uSize = discretization_->uSize();
-    for (int i = 0; i < uSize[0]; i++)
-    {
-        for (int j = 0; j < uSize[1]; j++)
-        {
-            // possible because the grid for u and v have the same dimensions in all directions
-            maxU = std::max(maxU, std::fabs(discretization_->u(i, j)));
-            maxV = std::max(maxV, std::fabs(discretization_->v(i, j)));
-        }
-    }
-
-    
-    double u_absMax_local = maxU;
-
-    double u_absMax = 0.0;
-    
-    MPI_Allreduce(&u_absMax_local,
-                  &u_absMax,
-                  1,
-                  MPI_DOUBLE,
-                  MPI_MAX,
-                  MPI_COMM_WORLD
-    );
-    
-    double dt_conv_u = std::numeric_limits<double>::max();
-    if (u_absMax > 0.0)
-        dt_conv_u = dx / u_absMax;
-
-    
-    // Compute maximal time step width regarding the convection v
-    double v_absMax_local = maxV;
-
-    double v_absMax = 0.0;
-
-    MPI_Allreduce(&v_absMax_local,
-                  &v_absMax,
-                  1,
-                  MPI_DOUBLE,
-                  MPI_MAX,
-                  MPI_COMM_WORLD
-    );
-    std::cout << "u_absMax= "<< u_absMax << std::endl;
-    std::cout << "hier1, Process" << partitioning_->ownRankNo() << std::endl;
-    double dt_conv_v = std::numeric_limits<double>::max();
-    if (v_absMax > 0.0)
-        dt_conv_v = dy / v_absMax;
-    
-    // Set the appropriate time step width by using a security factor tau
-    std::cout << "hier2, Process" << partitioning_->ownRankNo() << std::endl;
-    dt_ = std::min(settings_.tau * std::min(dt_diff, std::min(dt_conv_u,dt_conv_v)), settings_.maximumDt);
-    std::cout << "hier3, Process" << partitioning_->ownRankNo() << std::endl;
-}
 
 /**
  * Set velocity boundary values for u, v, F and G
@@ -242,7 +189,7 @@ void ComputationParallel::applyBoundaryValuesBottom()
         discretization_->f(i, discretization_->uJBegin()) = discretization_->u(i, discretization_->uJBegin());
     }
     // set bottom boundary values for v and G
-    for (int i = discretization_->vIBegin(); i < discretization_->vIEnd(); i++)
+    for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); i++)
     {
         discretization_->v(i, discretization_->vJBegin()) = settings_.dirichletBcBottom[1];
         discretization_->g(i, discretization_->vJBegin()) = discretization_->v(i, discretization_->vJBegin());
@@ -258,7 +205,7 @@ void ComputationParallel::applyBoundaryValuesTop()
         discretization_->f(i, discretization_->uJEnd()) = discretization_->u(i, discretization_->uJEnd());
     }
     // set top boundary values for v and G
-    for (int i = discretization_->vIBegin(); i < discretization_->vIEnd(); i++)
+    for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); i++)
     {
         discretization_->v(i, discretization_->vJEnd() - 1) = settings_.dirichletBcTop[1];
         discretization_->g(i, discretization_->vJEnd() - 1) = discretization_->v(i, discretization_->vJEnd() - 1);
@@ -334,6 +281,17 @@ void ComputationParallel::exchangeVelocitiesBottom()
 
     MPI_Wait(&recv_bottom_u, MPI_STATUS_IGNORE);
     MPI_Wait(&recv_bottom_v, MPI_STATUS_IGNORE);
+
+    // set bottom boundary values for F
+    for (int i = discretization_->uIBegin(); i < discretization_->uIEnd(); i++)
+    {
+        discretization_->f(i, discretization_->uJBegin()) = discretization_->u(i, discretization_->uJBegin());
+    }
+    // set bottom boundary values for G
+    for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); i++)
+    {
+        discretization_->g(i, discretization_->vJBegin()) = discretization_->v(i, discretization_->vJBegin());
+    }
 }
 
 /**
@@ -371,6 +329,17 @@ void ComputationParallel::exchangeVelocitiesTop()
 
     MPI_Wait(&recv_top_u, MPI_STATUS_IGNORE);
     MPI_Wait(&recv_top_v, MPI_STATUS_IGNORE);
+
+    // set top boundary values for  F
+    for (int i = discretization_->uIBegin(); i < discretization_->uIEnd(); i++)
+    {
+        discretization_->f(i, discretization_->uJEnd()) = discretization_->u(i, discretization_->uJEnd());
+    }
+    // set top boundary values for  G
+    for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); i++)
+    {
+        discretization_->g(i, discretization_->vJEnd() - 1) = discretization_->v(i, discretization_->vJEnd() - 1);
+    }
 }
 
 /**
@@ -431,6 +400,17 @@ void ComputationParallel::exchangeVelocitiesLeft()
     {
         discretization_->v(discretization_->vIBegin(), discretization_->vJBegin() + j) = column_v[j];
     }
+
+        // set left boundary values for F
+    for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd(); j++)
+    {
+        discretization_->f(discretization_->uIBegin(), j) = discretization_->u(discretization_->uIBegin(), j);
+    }
+    // set left boundary values for v and G
+    for (int j = discretization_->vJBegin(); j < discretization_->vJEnd(); j++)
+    {
+        discretization_->g(discretization_->vIBegin(), j) = discretization_->v(discretization_->vIBegin(), j);
+    }
 }
 
 /**
@@ -487,5 +467,16 @@ void ComputationParallel::exchangeVelocitiesRight()
 
     // send last inner column of v to ghost layer column of right neighbouring subdomain
     MPI_Isend(column_v, num_rows_v, MPI_DOUBLE, rightNeigbhourRank, 0, MPI_COMM_WORLD, &send_right_v);
+
+    // set right boundary values for F
+    for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd(); j++)
+    {
+        discretization_->f(discretization_->uIEnd() - 1, j) = discretization_->u(discretization_->uIEnd() - 1, j);
+    }
+    // set right boundary values for G
+    for (int j = discretization_->vJBegin(); j < discretization_->vJEnd(); j++)
+    {
+        discretization_->g(discretization_->vIEnd(), j) = discretization_->v(discretization_->vIEnd(), j);
+    }
 
 }

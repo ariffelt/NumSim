@@ -287,12 +287,30 @@ int StaggeredGrid::getOffsetLeft() const
 {
     if (partitioning_->ownPartitionContainsLeftBoundary())
     {
+        return 0;
+    }
+    return -1;
+}
+
+int StaggeredGrid::getOffsetLeft_rhs() const
+{
+    if (partitioning_->ownPartitionContainsLeftBoundary())
+    {
         return -1;
     }
     return 0;
 }
 
 int StaggeredGrid::getOffsetBottom() const
+{
+    if (partitioning_->ownPartitionContainsBottomBoundary())
+    {
+        return 0;
+    }
+    return -1;
+}
+
+int StaggeredGrid::getOffsetBottom_rhs() const
 {
     if (partitioning_->ownPartitionContainsBottomBoundary())
     {
@@ -313,6 +331,16 @@ int StaggeredGrid::getOffsetRight() const
 int StaggeredGrid::getOffsetTop() const
 {
     if (partitioning_->ownPartitionContainsTopBoundary())
+    {
+        return 0;
+    }
+    return 1;
+}
+
+int StaggeredGrid::sor_offset() const
+{
+    int sum_offsets = partitioning_->nodeOffset()[0] + partitioning_->nodeOffset()[1];
+    if (sum_offsets % 2 == 0)
     {
         return 0;
     }
