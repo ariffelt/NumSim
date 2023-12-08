@@ -79,6 +79,8 @@ void ComputationParallel::runSimulation()
         // compute preliminary velocities (each process independent from the others)
         computePreliminaryVelocities();
 
+        communicatePreliminaryVelocities();
+
         // compute rhs of pressure equation (each process independent from the others)
         computeRightHandSide();
 
@@ -178,6 +180,82 @@ void ComputationParallel::applyBoundaryValues()
     {
         exchangeVelocitiesRight();
     }
+}
+
+void ComputationParallel::communicatePreliminaryVelocities()
+{
+    int num_rows_F = discretization_->uJEnd() - discretization_->uJBegin();
+    int num_rows_G = discretization_->vJEnd() - discretization_->vJBegin();
+    int num_cols_F = discretization_->uIEnd() - discretization_->uIBegin();
+    int num_cols_G = discretization_->vIEnd() - discretization_->vIBegin();
+    if (!partitioning_->ownPartitionContainsBottomBoundary())
+    {
+        MPI_Request request_G_bottom;
+
+        // send first inner row of u and v to bottom neighbouring subdomain
+        std::vector<double> G_bottom(num_cols_G, 0);
+
+
+        // receive ghost layer row from bottom neighbouring subdomain into first row
+        partitioning_->MPI_irecvFromBottom(G_bottom, num_cols_G, request_G_bottom);
+
+        partitioning_->MPI_wait(request_G_bottom);
+
+        for (int i = discretization_->vIBegin()+1; i < discretization_->vIEnd(); i++)
+        {
+            discretization_->g(i, discretization_->vJBegin()) = G_bottom[i-1];
+        }
+    }
+    if (!partitioning_->ownPartitionContainsTopBoundary())
+    {
+        MPI_Request request_G_top;
+
+        // send last inner row of u and v to ghost layer row of top neighbouring subdomain
+        std::vector<double> G_top(num_cols_G, 0);
+
+        for (int i = discretization_->vIBegin()+1; i < discretization_->vIEnd(); i++)
+        {
+            G_top[i-1] = discretization_->g(i, discretization_->vJEnd() - 1);
+        }
+
+        partitioning_->MPI_isendToTop(G_top, request_G_top);
+
+    }
+    if (!partitioning_->ownPartitionContainsLeftBoundary())
+    {
+        MPI_Request request_F_left;
+
+        // send first inner column of u to left neighbouring subdomain
+        std::vector<double> F_left(num_rows_F, 0);
+
+        // receive ghost layer column from left neighbouring subdomain into first column
+        partitioning_->MPI_irecvFromLeft(F_left, num_rows_F, request_F_left);
+
+        partitioning_->MPI_wait(request_F_left);
+
+        for (int j = discretization_->uJBegin()+1; j < discretization_->uJEnd(); j++)
+        {
+            discretization_->f(discretization_->uIBegin(), j) = F_left[j-1];
+        }
+
+
+
+    }
+    if (!partitioning_->ownPartitionContainsRightBoundary())
+    {   
+        MPI_Request request_F_right;
+
+        // send last inner column of u to ghost layer column of right neighbouring subdomain
+        std::vector<double> F_right(num_rows_F, 0);
+
+        for (int j = discretization_->uJBegin()+1; j < discretization_->uJEnd(); j++)
+        {
+            F_right[j-1] = discretization_->f(discretization_->uIEnd() - 1, j);
+        }
+
+        partitioning_->MPI_isendToRight(F_right, request_F_right);
+    }
+
 }
 
 void ComputationParallel::applyBoundaryValuesBottom()

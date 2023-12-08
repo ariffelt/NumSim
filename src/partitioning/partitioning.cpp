@@ -158,25 +158,25 @@ void Partitioning::MPI_isend(int destinationRank, std::vector<double> &data, MPI
 }
 
 // send info to bottom neighboring subdomain
-void Partitioning::MPI_isendToBottom(int destinationRank, std::vector<double> &data, MPI_Request &request)
+void Partitioning::MPI_isendToBottom(std::vector<double> &data, MPI_Request &request)
 {
     MPI_isend(bottomNeighbourRankNo(), data, request);
 }
 
 // send info to top neighboring subdomain
-void Partitioning::MPI_isendToTop(int destinationRank, std::vector<double> &data, MPI_Request &request)
+void Partitioning::MPI_isendToTop(std::vector<double> &data, MPI_Request &request)
 {
     MPI_isend(topNeighbourRankNo(), data, request);
 }
 
 // send info to left neighboring subdomain
-void Partitioning::MPI_isendToLeft(int destinationRank, std::vector<double> &data, MPI_Request &request)
+void Partitioning::MPI_isendToLeft(std::vector<double> &data, MPI_Request &request)
 {
     MPI_isend(leftNeighbourRankNo(), data, request);
 }
 
 // send info to right neighboring subdomain
-void Partitioning::MPI_isendToRight(int destinationRank, std::vector<double> &data, MPI_Request &request)
+void Partitioning::MPI_isendToRight(std::vector<double> &data, MPI_Request &request)
 {
     MPI_isend(rightNeighbourRankNo(), data, request);
 }
@@ -215,6 +215,12 @@ void Partitioning::MPI_recvFromRight(std::vector<double> &data, int count)
 void Partitioning::MPI_irecv(int sourceRank, std::vector<double> &data, int count, MPI_Request &request)
 {
     MPI_Irecv(data.data(), count, MPI_DOUBLE, sourceRank, 0, MPI_COMM_WORLD, &request);
+}
+
+// receive info from top neighboring subdomain
+void Partitioning::MPI_irecvFromBottom(std::vector<double> &data, int count, MPI_Request &request)
+{
+    MPI_irecv(bottomNeighbourRankNo(), data, count, request);
 }
 
 // receive info from top neighboring subdomain
