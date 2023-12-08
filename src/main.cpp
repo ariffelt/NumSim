@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
     std::string filename = argv[1];
 
     // print message
-    std::cout << "Filename: \"" << filename << "\"" << std::endl;
+    // std::cout << "Filename: \"" << filename << "\"" << std::endl;
 
     MPI_Init(NULL, NULL);
 

@@ -24,7 +24,7 @@ void RedBlackSOR::solve()
   int sor_offset = discretization_->sor_offset(); 
 
   double res2 = getResidual();
-  std::cout << "RedBlackSOR::solve() after getResidual(); " << partitioning_->ownRankNo() << ", res2 = " << res2 << std::endl;
+  //std::cout << "RedBlackSOR::solve() after getResidual(); " << partitioning_->ownRankNo() << ", res2 = " << res2 << std::endl;
 
   // set initial values
   int iteration = 0;

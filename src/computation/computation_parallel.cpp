@@ -12,10 +12,14 @@ void ComputationParallel::initialize(int argc, char *argv[])
     // load and print settings
     settings_ = Settings();
     settings_.loadFromFile(argv[1]);
-    settings_.printSettings();
+    // settings_.printSettings();
 
     partitioning_ = std::make_shared<Partitioning>();
     partitioning_->initialize(settings_.nCells);
+    if (partitioning_-> ownRankNo() == 0)
+    {
+        settings_.printSettings();
+    }
 
     meshWidth_[0] = settings_.physicalSize[0] / settings_.nCells[0];
     meshWidth_[1] = settings_.physicalSize[1] / settings_.nCells[1];
@@ -64,11 +68,11 @@ void ComputationParallel::runSimulation()
         //if (t == 0.0) {
         //    discretization_->f(0, discretization_->uJEnd()-1) = 0.005; //discretization_->f(discretization_->uIBegin() + 1, j); 
         //}
-        std::cout << "Process " << partitioning_->ownRankNo() << ": t = " << t << std::endl;
+        //std::cout << "Process " << partitioning_->ownRankNo() << ": t = " << t << std::endl;
         // compute time step size dt (contributions from all processes)
         computeTimeStepWidthParallel();
         //computeTimeStepWidthAlt();
-        std::cout << "finished computeTimeStepWidth, Process" << partitioning_->ownRankNo() << std::endl;
+        //std::cout << "finished computeTimeStepWidth, Process" << partitioning_->ownRankNo() << std::endl;
         // decrease time step width in last time step, s.t. the end time will be reached exactly
         if (t + dt_ > settings_.endTime)        
         {
@@ -96,7 +100,7 @@ void ComputationParallel::runSimulation()
             outputWriterParaviewParallel_->writeFile(t);
             last_printed_time = t;
         }
-        outputWriterTextParallel_->writeFile(t);
+        // outputWriterTextParallel_->writeFile(t);
         // write output, only write text output in debug mode
         // TODO: write output only every n-th time step
         // #ifndef NDEBUG
@@ -121,10 +125,10 @@ void ComputationParallel::computeTimeStepWidthParallel()
     // initialize global time step width and dt_ as local
     double dtGlobal;
     double dtLocal = dt_;
-    std::cout << "Before Allreduce in computeTimeStepWidth, Process " << partitioning_->ownRankNo() << ": dtLocal = " << dtLocal << std::endl;
+    // std::cout << "Before Allreduce in computeTimeStepWidth, Process " << partitioning_->ownRankNo() << ": dtLocal = " << dtLocal << std::endl;
     // reduce dtLocal to dtGlobal by taking the minimum over all subdomains
     MPI_Allreduce(&dtLocal, &dtGlobal, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-    std::cout << "After Allreduce in computeTimeStepWidth, Process " << partitioning_->ownRankNo() << ": dtLocal = " << dtLocal << std::endl;
+    // std::cout << "After Allreduce in computeTimeStepWidth, Process " << partitioning_->ownRankNo() << ": dtLocal = " << dtLocal << std::endl;
 
     // set time step width to global minimum
     dt_ = dtGlobal;
