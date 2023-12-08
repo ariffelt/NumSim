@@ -53,16 +53,16 @@ public:
   void MPI_isend(int destinationRank, std::vector<double> &data, MPI_Request &request);
 
   //! send info to bottom neighboring subdomain
-  void MPI_isendToBottom(int destinationRank, std::vector<double> &data, MPI_Request &request);
+  void MPI_isendToBottom(std::vector<double> &data, MPI_Request &request);
 
   //! send info to top neighboring subdomain
-  void MPI_isendToTop(int destinationRank, std::vector<double> &data, MPI_Request &request);
+  void MPI_isendToTop(std::vector<double> &data, MPI_Request &request);
 
   //! send info to left neighboring subdomain
-  void MPI_isendToLeft(int destinationRank, std::vector<double> &data, MPI_Request &request);
+  void MPI_isendToLeft(std::vector<double> &data, MPI_Request &request);
 
   //! send info to right neighboring subdomain
-  void MPI_isendToRight(int destinationRank, std::vector<double> &data, MPI_Request &request);
+  void MPI_isendToRight(std::vector<double> &data, MPI_Request &request);
 
   //! MPI-recv command
   void MPI_recv(int sourceRank, std::vector<double> &data, int count);

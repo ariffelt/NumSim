@@ -30,6 +30,7 @@ protected:
     void computeTimeStepWidthParallel();
     void computeTimeStepWidthAlt();
 
+    void communicatePreliminaryVelocities();
 
     //! set boundary values for u, v, F and G and exchange values at borders btw subdomains
     void applyBoundaryValues();
