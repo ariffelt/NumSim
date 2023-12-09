@@ -14,5 +14,6 @@ public:
     //! solve the system of the Poisson equation for pressure
     void solve() override;
 protected:
+    std::shared_ptr<Array2D> direction_;
     void sendAndBorrowValues_q();
 };
