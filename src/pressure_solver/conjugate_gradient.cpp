@@ -56,7 +56,7 @@ void ConjugateGradient::solve()
     MPI_Reduce(&alpha_local, &alpha_global, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
     do {
-        sendAndBorrowValues_q();
+        sendAndBorrowValues_direction();
 
         double lambda_local = 0.0;
 
@@ -87,7 +87,7 @@ void ConjugateGradient::solve()
         {
             for (int j = 1; j < discretization_->pJEnd(); j++)
             {
-                discretization_->p(i-1, j-1) += lambda_global * (*direction_)(i, j); //maybe change, seltsam verschiben
+                discretization_->p(i-1, j-1) += lambda_global * (*direction_)(i, j); //maybe change, seltsam verschiben //**hat Maureen nicht
 
                 residual_(i, j) -= lambda_global * Aq_(i, j);
 
@@ -99,15 +99,15 @@ void ConjugateGradient::solve()
 
         double beta = alpha_global / alpha_prev;
 
-        for (int i = 1; i < discretization_->pIEnd(); i++)
+        for (int i = 1; i < discretization_->pIEnd(); i++) //Maureen hat pIEnd()-1
         {
-            for (int j = 1; j < discretization_->pJEnd(); j++)
+            for (int j = 1; j < discretization_->pJEnd(); j++) //Maureen hat pJEnd()-1
             {
                 (*direction_)(i, j) = residual_(i, j) + beta * (*direction_)(i, j);
             }
         }
 
-        res2 = alpha_global / (partitioning_->nCellsGlobal()[0] * partitioning_->nCellsGlobal()[1]); //wenn nicht mal nur damit probieren
+        res2 = alpha_global / (partitioning_->nCellsGlobal()[0] * partitioning_->nCellsGlobal()[1]);
         // alpha_global is already the sum over all partitions, so res2 doen't need to be reduced
 
     } while (res2 >= epsilon2 && iteration < maximumNumberOfIterations_);
@@ -115,15 +115,15 @@ void ConjugateGradient::solve()
     sendAndBorrowValues();
 }
 
-void ConjugateGradient::sendAndBorrowValues_q()
+void ConjugateGradient::sendAndBorrowValues_direction()
 {
     // send and borrow values for q
 
     // Initialize vectors for sending and receiving
-    std::vector<double> p_bottom(discretization_->pIEnd() - discretization_->pIBegin()); //die haben pIEnd-pIBegin-2
-    std::vector<double> p_top(discretization_->pIEnd() - discretization_->pIBegin());
-    std::vector<double> p_left(discretization_->pJEnd() - discretization_->pJBegin());
-    std::vector<double> p_right(discretization_->pJEnd() - discretization_->pJBegin());
+    std::vector<double> p_bottom(discretization_->pIEnd() - discretization_->pIBegin()); //die haben pIEnd-pIBegin-2 //Maureen hat +1
+    std::vector<double> p_top(discretization_->pIEnd() - discretization_->pIBegin()); //Maureen hat +1
+    std::vector<double> p_left(discretization_->pJEnd() - discretization_->pJBegin()); //Maureen hat +1
+    std::vector<double> p_right(discretization_->pJEnd() - discretization_->pJBegin()); //Maureen hat +1
 
     // Initialize lengths
     const int length_p_topbottom = p_top.size();
@@ -143,9 +143,9 @@ void ConjugateGradient::sendAndBorrowValues_q()
     else
     {
         // send bottom cells
-        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd() - 1; i++)
-        { // dont overwrite the first and last value
-            p_bottom[i] = (*direction_)(i + 1, 1);
+        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd() - 1; i++) //Maureen hat ohne +1 -1
+        {
+            p_bottom[i] = (*direction_)(i + 1, discretization_->pJBegin() + 1); //Maureen hat ohne +1
         }
         partitioning_->MPI_isend(partitioning_->bottomNeighbourRankNo(), p_bottom, req_p_bottom);
 
@@ -153,9 +153,9 @@ void ConjugateGradient::sendAndBorrowValues_q()
         partitioning_->MPI_irecv(partitioning_->bottomNeighbourRankNo(), p_bottom, length_p_topbottom, req_p_bottom);
         // set bottom cells
         MPI_Wait(&req_p_bottom, MPI_STATUS_IGNORE); // wait for receive to finish
-        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd() - 1; i++)
+        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd() - 1; i++) //Maureen hat ohne -1
         {
-            (*direction_)(i + 1,0) = p_bottom[i]; //maybe change
+            (*direction_)(i + 1,0) = p_bottom[i]; //Maureen hat ohne +1
         }
     }
 
@@ -170,9 +170,9 @@ void ConjugateGradient::sendAndBorrowValues_q()
     else
     {
         // send top cells
-        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd() - 1; i++)
+        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd() - 1; i++) //Maureen hat ohne +1 und -1
         { 
-            p_top[i] = (*direction_)(i + 1, discretization_->pJEnd() - 1);
+            p_top[i] = (*direction_)(i + 1, discretization_->pJEnd() - 1); //Maureen hat ohne +1
         }
         partitioning_->MPI_isend(partitioning_->topNeighbourRankNo(), p_top, req_p_top);
 
@@ -180,9 +180,9 @@ void ConjugateGradient::sendAndBorrowValues_q()
         partitioning_->MPI_irecv(partitioning_->topNeighbourRankNo(), p_top, length_p_topbottom, req_p_top);
         // set top cells
         MPI_Wait(&req_p_top, MPI_STATUS_IGNORE); // wait for receive to finish
-        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd() - 1; i++)
+        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd() - 1; i++) //Maureen hat ohne -1 
         {
-            (*direction_)(i + 1, discretization_->pJEnd()) = p_top[i];
+            (*direction_)(i + 1, discretization_->pJEnd()) = p_top[i]; //Maureen hat ohne +1
         }
     }
 
@@ -197,9 +197,9 @@ void ConjugateGradient::sendAndBorrowValues_q()
     else
     {
         // send left cells
-        for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd() - 1; j++)
-        { 
-            p_left[j] = (*direction_)(1, j + 1);
+        for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd() - 1; j++) //Maureen hat ohne +1 und -1
+        {
+            p_left[j] = (*direction_)(discretization_->pIBegin() + 1, j + 1); //Maureen hat das j+1 ohne + 1 
         }
         partitioning_->MPI_isend(partitioning_->leftNeighbourRankNo(), p_left, req_p_left);
 
@@ -207,9 +207,9 @@ void ConjugateGradient::sendAndBorrowValues_q()
         partitioning_->MPI_irecv(partitioning_->leftNeighbourRankNo(), p_left, length_p_leftright, req_p_left);
         // set left cells
         MPI_Wait(&req_p_left, MPI_STATUS_IGNORE); // wait for receive to finish
-        for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd() - 1; j++)
+        for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd() - 1; j++) //Maureen hat ohne -1
         {
-            (*direction_)(discretization_->pIBegin(), j + 1) = p_left[j];
+            (*direction_)(discretization_->pIBegin(), j + 1) = p_left[j]; //Maureen hat das ohne +1
         }
     }
 
@@ -224,9 +224,9 @@ void ConjugateGradient::sendAndBorrowValues_q()
     else
     {
         // send right cells
-        for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd() - 1; j++)
+        for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd() - 1; j++) //Maureen hat ohne +1 und -1
         { // dont overwrite the first and last value
-            p_right[j] = (*direction_)(discretization_->pIEnd() - 1, j + 1);
+            p_right[j] = (*direction_)(discretization_->pIEnd() - 1, j + 1); //Maureen hat das j+1 ohne +1
         }
         partitioning_->MPI_isend(partitioning_->rightNeighbourRankNo(), p_right, req_p_right);
 
@@ -234,9 +234,9 @@ void ConjugateGradient::sendAndBorrowValues_q()
         partitioning_->MPI_irecv(partitioning_->rightNeighbourRankNo(), p_right, length_p_leftright, req_p_right);
         // set right cells
         MPI_Wait(&req_p_right, MPI_STATUS_IGNORE); // wait for receive to finish
-        for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd() - 1; j++)
+        for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd() - 1; j++) //Maureen hat ohne -1
         {
-            (*direction_)(discretization_->pIEnd(), j + 1) = p_right[j];
+            (*direction_)(discretization_->pIEnd(), j + 1) = p_right[j]; //Maureen hat das ohne +1
         }
     }
 }
