@@ -27,6 +27,7 @@ set(PROJECT_FILES
     pressure_solver/sor.cpp
     pressure_solver/pressure_solver_parallel.cpp
     pressure_solver/red_black_sor.cpp
+    pressure_solver/conjugate_gradient.cpp
 
     settings/settings.cpp
 

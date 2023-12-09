@@ -34,17 +34,27 @@ void ComputationParallel::initialize(int argc, char *argv[])
         discretization_ = std::make_shared<CentralDifferences>(partitioning_, meshWidth_);
     }
 
-
+    #ifndef NDEBUG
     if (settings_.pressureSolver == "SOR")
     {
         pressureSolver_ = std::make_unique<RedBlackSOR>(discretization_, settings_.epsilon,
                                                         settings_.maximumNumberOfIterations, settings_.omega, partitioning_);
+    }
+    else if (settings_.pressureSolver == "CG")
+    {
+        pressureSolver_ = std::make_unique<ConjugateGradient>(discretization_, settings_.epsilon,
+                                                              settings_.maximumNumberOfIterations, partitioning_);
     }
     else
     {
         std::cout << "Error: Unknown pressure solver for parallel computing: " << settings_.pressureSolver << std::endl;
         exit(1);
     }
+    #else
+    pressureSolver_ = std::make_unique<ConjugateGradient>(discretization_, settings_.epsilon,
+                                                          settings_.maximumNumberOfIterations, partitioning_);
+    #endif
+
     outputWriterTextParallel_ = std::make_unique<OutputWriterTextParallel>(discretization_, *partitioning_);
     outputWriterParaviewParallel_ = std::make_unique<OutputWriterParaviewParallel>(discretization_, *partitioning_);
 }
@@ -65,14 +75,13 @@ void ComputationParallel::runSimulation()
         // set boundary values for u, v, F and G and exchange values at borders btw subdomains
         // exchange velocities at boundaries btw subdomains
         applyBoundaryValues();
-        //if (t == 0.0) {
-        //    discretization_->f(0, discretization_->uJEnd()-1) = 0.005; //discretization_->f(discretization_->uIBegin() + 1, j); 
-        //}
-        //std::cout << "Process " << partitioning_->ownRankNo() << ": t = " << t << std::endl;
+
+        if (partitioning_->ownRankNo() == 0)
+        {
+            std::cout << "t = " << t << std::endl;
+        }
         // compute time step size dt (contributions from all processes)
         computeTimeStepWidthParallel();
-        //computeTimeStepWidthAlt();
-        //std::cout << "finished computeTimeStepWidth, Process" << partitioning_->ownRankNo() << std::endl;
         // decrease time step width in last time step, s.t. the end time will be reached exactly
         if (t + dt_ > settings_.endTime)        
         {
@@ -98,6 +107,7 @@ void ComputationParallel::runSimulation()
         // write output, only write text output in debug mode
         if (t - last_printed_time >= 1.0 || t == settings_.endTime){
             outputWriterParaviewParallel_->writeFile(t);
+            outputWriterTextParallel_->writeFile(t);
             last_printed_time = t;
         }
         // outputWriterTextParallel_->writeFile(t);
@@ -125,10 +135,8 @@ void ComputationParallel::computeTimeStepWidthParallel()
     // initialize global time step width and dt_ as local
     double dtGlobal;
     double dtLocal = dt_;
-    // std::cout << "Before Allreduce in computeTimeStepWidth, Process " << partitioning_->ownRankNo() << ": dtLocal = " << dtLocal << std::endl;
     // reduce dtLocal to dtGlobal by taking the minimum over all subdomains
     MPI_Allreduce(&dtLocal, &dtGlobal, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-    // std::cout << "After Allreduce in computeTimeStepWidth, Process " << partitioning_->ownRankNo() << ": dtLocal = " << dtLocal << std::endl;
 
     // set time step width to global minimum
     dt_ = dtGlobal;

@@ -11,6 +11,7 @@
 #include "discretization/2_donor_cell.h"
 
 #include "pressure_solver/red_black_sor.h"
+#include "pressure_solver/conjugate_gradient.h"
 
 #include "output_writer/output_writer_text_parallel.h"
 #include "output_writer/output_writer_paraview_parallel.h"
