@@ -44,11 +44,11 @@ void ConjugateGradient::solve()
             double D2pDx2 = (discretization_->p(i + 1, j) - 2 * discretization_->p(i, j) + discretization_->p(i - 1, j)) / hx2;
             double D2pDy2 = (discretization_->p(i, j + 1) - 2 * discretization_->p(i, j) + discretization_->p(i, j - 1)) / hy2;
 
-            residual_(i - discretization_->pIBegin(), j - discretization_->pJBegin()) = discretization_->rhs(i, j) - (D2pDx2 + D2pDy2);
+            residual_(i, j) = discretization_->rhs(i, j) - (D2pDx2 + D2pDy2);
 
-            direction_(i - discretization_->pIBegin(), j - discretization_->pJBegin()) = residual_(i - discretization_->pIBegin(), j - discretization_->pJBegin());
+            direction_(i, j) = residual_(i, j);
 
-            alpha_local += residual_(i - discretization_->pIBegin(), j - discretization_->pJBegin()) * residual_(i - discretization_->pIBegin(), j - discretization_->pJBegin());
+            alpha_local += residual_(i, j) * residual_(i, j);
         }
     }
 
@@ -59,9 +59,9 @@ void ConjugateGradient::solve()
 
         double lambda_local = 0.0;
 
-        for (int i = 1; i < discretization_->pIEnd() - 1; i++)
+        for (int i = 1; i < discretization_->pIEnd(); i++)
         {
-            for (int j = 1; j < discretization_->pJEnd() - 1; j++)
+            for (int j = 1; j < discretization_->pJEnd(); j++)
             {
                 double D2qDx2 = (direction_(i + 1, j) - 2 * direction_(i, j) + direction_(i - 1, j)) / hx2;
                 double D2qDy2 = (direction_(i, j + 1) - 2 * direction_(i, j) + direction_(i, j - 1)) / hy2;
@@ -82,11 +82,11 @@ void ConjugateGradient::solve()
         alpha_local = 0.0;
         double alpha_prev = alpha_global;
 
-        for (int i = 1; i < discretization_->pIEnd() - 1; i++)
+        for (int i = 1; i < discretization_->pIEnd(); i++)
         {
-            for (int j = 1; j < discretization_->pJEnd() - 1; j++)
+            for (int j = 1; j < discretization_->pJEnd(); j++)
             {
-                discretization_->p(i, j) += lambda_global * direction_(i, j);
+                discretization_->p(i-1, j-1) += lambda_global * direction_(i, j); //maybe change
 
                 residual_(i, j) -= lambda_global * Aq_(i, j);
 
@@ -98,15 +98,15 @@ void ConjugateGradient::solve()
 
         double beta = alpha_global / alpha_prev;
 
-        for (int i = 1; i < discretization_->pIEnd() - 1; i++)
+        for (int i = 1; i < discretization_->pIEnd(); i++)
         {
-            for (int j = 1; j < discretization_->pJEnd() - 1; j++)
+            for (int j = 1; j < discretization_->pJEnd(); j++)
             {
                 direction_(i, j) = residual_(i, j) + beta * direction_(i, j);
             }
         }
 
-        res2 = alpha_global / partitioning_->nCellsGlobal()[0] * partitioning_->nCellsGlobal()[1];
+        res2 = alpha_global / (partitioning_->nCellsGlobal()[0] * partitioning_->nCellsGlobal()[1]); //wenn nicht mal nur damit probieren
         // alpha_global is already the sum over all partitions, so res2 doen't need to be reduced
 
     } while (res2 >= epsilon2 && iteration < maximumNumberOfIterations_);
