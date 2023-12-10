@@ -7,25 +7,24 @@
 
 /**
  * The class Partitioning computes the partitioning of the computational domain into subdomains.
-*/
+ */
 
 class Partitioning
 {
 public:
-
   //! compute partitioning, set internal variables
-  void initialize(std::array<int,2> nCellsGlobal);
+  void initialize(std::array<int, 2> nCellsGlobal);
 
   //! compute node offset
   //! (i_local,j_local) + nodeOffset = (i_global,j_global)
   void computeNodeOffset();
 
   //! get the local number of cells in the own subdomain
-  std::array<int,2> nCellsLocal() const;
+  std::array<int, 2> nCellsLocal() const;
 
   //! get the global number of cells in the whole computational domain
   //! used in OutputWriterParaviewParallel
-  std::array<int,2> nCellsGlobal() const;
+  std::array<int, 2> nCellsGlobal() const;
 
   //! get the own MPI rank no
   //! used in OutputWriterParaviewParallel and OutputWriterTextParallel
@@ -37,62 +36,14 @@ public:
   //! MPI-send command
   void MPI_send(int destinationRank, std::vector<double> &data);
 
-  //! send info to bottom neighboring subdomain
-  void MPI_sendToBottom(std::vector<double> &data);
-
-  //! send info to top neighboring subdomain
-  void MPI_sendToTop(std::vector<double> &data);
-
-  //! send info to left neighboring subdomain
-  void MPI_sendToLeft(std::vector<double> &data);
-
-  //! send info to right neighboring subdomain
-  void MPI_sendToRight(std::vector<double> &data);
-
   //! MPI-isend command
   void MPI_isend(int destinationRank, std::vector<double> &data, MPI_Request &request);
-
-  //! send info to bottom neighboring subdomain
-  void MPI_isendToBottom(std::vector<double> &data, MPI_Request &request);
-
-  //! send info to top neighboring subdomain
-  void MPI_isendToTop(std::vector<double> &data, MPI_Request &request);
-
-  //! send info to left neighboring subdomain
-  void MPI_isendToLeft(std::vector<double> &data, MPI_Request &request);
-
-  //! send info to right neighboring subdomain
-  void MPI_isendToRight(std::vector<double> &data, MPI_Request &request);
 
   //! MPI-recv command
   void MPI_recv(int sourceRank, std::vector<double> &data, int count);
 
-  //! receive info from bottom neighboring subdomain
-  void MPI_recvFromBottom(std::vector<double> &data, int count);
-
-  //! receive info from top neighboring subdomain
-  void MPI_recvFromTop(std::vector<double> &data, int count);
-
-  //! receive info from left neighboring subdomain
-  void MPI_recvFromLeft(std::vector<double> &data, int count);
-
-  //! receive info from right neighboring subdomain
-  void MPI_recvFromRight(std::vector<double> &data, int count);
-
-  //! MPI-irecv command	
+  //! MPI-irecv command
   void MPI_irecv(int sourceRank, std::vector<double> &data, int count, MPI_Request &request);
-
-  //! receive info from bottom neighboring subdomain
-  void MPI_irecvFromBottom(std::vector<double> &data, int count, MPI_Request &request);
-
-  //! receive info from top neighboring subdomain
-  void MPI_irecvFromTop(std::vector<double> &data, int count, MPI_Request &request);
-
-  //! receive info from left neighboring subdomain
-  void MPI_irecvFromLeft(std::vector<double> &data, int count, MPI_Request &request);
-
-  //! receive info from right neighboring subdomain
-  void MPI_irecvFromRight(std::vector<double> &data, int count, MPI_Request &request);
 
   //! MPI-wait command
   void MPI_wait(MPI_Request &request);
@@ -129,13 +80,12 @@ public:
   //! get the rank no of the bottom neighbouring rank
   int bottomNeighbourRankNo();
 
-  //! get the offset values for counting local nodes in x and y direction. 
+  //! get the offset values for counting local nodes in x and y direction.
   //! (i_local,j_local) + nodeOffset = (i_global,j_global)
   //! used in OutputWriterParaviewParallel
-  std::array<int,2> nodeOffset() const;
+  std::array<int, 2> nodeOffset() const;
 
 protected:
-
   //! get the row index of the node
   int nodeRowIndex() const;
 
@@ -143,17 +93,17 @@ protected:
   int nodeColumnIndex() const;
 
   //! number of cells in x and y direction
-  std::array<int,2> nCellsGlobal_;
+  std::array<int, 2> nCellsGlobal_;
 
   //! number of cells in x and y direction in the own partition
-  std::array<int,2> nCellsLocal_;
+  std::array<int, 2> nCellsLocal_;
 
   //! number of MPI ranks
   int nRanks_;
 
   //! number of domains in x and y direction
   //! 2D array
-  std::array<int,2> nDomains_;
+  std::array<int, 2> nDomains_;
 
   //! rank no of the own MPI rank
   int ownRankNo_;
@@ -182,12 +132,11 @@ protected:
   //! if the own partition has part of the right boundary of the whole domain
   bool ownPartitionContainsRightBoundary_;
 
-  //! offset values for counting local nodes in x and y direction. 
+  //! offset values for counting local nodes in x and y direction.
   //! (i_local,j_local) + nodeOffset = (i_global,j_global)
-  std::array<int,2> nodeOffset_;
+  std::array<int, 2> nodeOffset_;
 
 private:
-
   //! decompose computational domain into partitions
   void computePartitioning(int nRanks);
 };

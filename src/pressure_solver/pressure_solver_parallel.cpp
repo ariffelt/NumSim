@@ -2,6 +2,9 @@
 
 #include <cassert>
 
+/**
+ * @brief Construct a new Pressure Solver Parallel:: Pressure Solver Parallel object
+ */
 PressureSolverParallel::PressureSolverParallel(std::shared_ptr<Discretization> discretization,
                                                double epsilon,
                                                int maximumNumberOfIterations,
@@ -11,19 +14,20 @@ PressureSolverParallel::PressureSolverParallel(std::shared_ptr<Discretization> d
 {
 }
 
+/**
+ * exchange pressure values btw partitions
+ */
 void PressureSolverParallel::sendAndBorrowValues()
 {
     MPI_Request req_p_right;
     MPI_Request req_p_left;
     MPI_Request req_p_top;
     MPI_Request req_p_bottom;
-    
 
     int length_p_leftright = discretization_->pJEnd() - discretization_->pJBegin();
     int length_p_bottomtop = discretization_->pIEnd() - discretization_->pIBegin();
-    std::vector<double> p_bottom(length_p_bottomtop, 0);
+    
     std::vector<double> p_left(length_p_leftright, 0);
-    std::vector<double> p_top(length_p_bottomtop, 0);
     std::vector<double> p_right(length_p_leftright, 0);
 
     // one partition always borrows the own values to the lower and left neighbour and borrows
@@ -41,23 +45,16 @@ void PressureSolverParallel::sendAndBorrowValues()
     else
     {
         // send bottom cells
-        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd(); i++)
-        { // dont overwrite the first and last value
-            p_bottom[i] = discretization_->p(i, discretization_->pJBegin() + 1);
-        }
-        partitioning_->MPI_isend(partitioning_->bottomNeighbourRankNo(), p_bottom, req_p_bottom);
+        // dont overwrite the first and last value
+        MPI_Isend(&discretization_->p(discretization_->pIBegin() + 1, discretization_->pJBegin() + 1), length_p_bottomtop, MPI_DOUBLE,
+                  partitioning_->bottomNeighbourRankNo(), 0, MPI_COMM_WORLD, &req_p_bottom);
 
+        // receive from bottom cells
+        MPI_Irecv(&discretization_->p(discretization_->pIBegin() + 1, discretization_->pJBegin()), length_p_bottomtop, MPI_DOUBLE,
+                  partitioning_->bottomNeighbourRankNo(), 0, MPI_COMM_WORLD, &req_p_bottom);
 
-        // receive call bottom cells
-        partitioning_->MPI_irecv(partitioning_->bottomNeighbourRankNo(), p_bottom, length_p_bottomtop, req_p_bottom);
-        // set bottom cells
-        MPI_Wait(&req_p_bottom, MPI_STATUS_IGNORE); // wait for receive to finish
-        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd(); i++)
-        {
-            discretization_->p(i, discretization_->pJBegin()) = p_bottom[i];
-        }
-
-
+        // wait for receive to finish
+        MPI_Wait(&req_p_bottom, MPI_STATUS_IGNORE);
     }
 
     // LEFT:
@@ -80,14 +77,15 @@ void PressureSolverParallel::sendAndBorrowValues()
 
         // receive call left cells
         partitioning_->MPI_irecv(partitioning_->leftNeighbourRankNo(), p_left, length_p_leftright, req_p_left);
+
+        // wait for receive to finish
+        MPI_Wait(&req_p_left, MPI_STATUS_IGNORE);
+
         // set left cells
-        MPI_Wait(&req_p_left, MPI_STATUS_IGNORE); // wait for receive to finish
         for (int j = discretization_->pJBegin(); j < discretization_->pJEnd(); j++)
         {
             discretization_->p(discretization_->pIBegin(), j) = p_left[j];
         }
-
-
     }
 
     // TOP
@@ -109,20 +107,15 @@ void PressureSolverParallel::sendAndBorrowValues()
     else
     {
         // send top cells
-        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd(); i++)
-        { // dont overwrite the first and last value
-            p_top[i] = discretization_->p(i, discretization_->pJEnd() - 1);
-        }
-        partitioning_->MPI_isend(partitioning_->topNeighbourRankNo(), p_top, req_p_top);
+        MPI_Isend(&discretization_->p(discretization_->pIBegin() + 1, discretization_->pJEnd() - 1), length_p_bottomtop, MPI_DOUBLE,
+                  partitioning_->topNeighbourRankNo(), 0, MPI_COMM_WORLD, &req_p_top);
 
         // receive top cells
-        partitioning_->MPI_irecv(partitioning_->topNeighbourRankNo(), p_top, length_p_bottomtop, req_p_top);
-        // set top cellsach st
-        MPI_Wait(&req_p_top, MPI_STATUS_IGNORE); // wait for receive to finish
-        for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd(); i++)
-        {
-            discretization_->p(i, discretization_->pJEnd()) = p_top[i];
-        }
+        MPI_Irecv(&discretization_->p(discretization_->pIBegin() + 1, discretization_->pJEnd()), length_p_bottomtop, MPI_DOUBLE,
+                  partitioning_->topNeighbourRankNo(), 0, MPI_COMM_WORLD, &req_p_top);
+
+        // wait for receive to finish
+        MPI_Wait(&req_p_top, MPI_STATUS_IGNORE);
     }
 
     // RIGHT
@@ -144,8 +137,10 @@ void PressureSolverParallel::sendAndBorrowValues()
 
         // receive right cells
         partitioning_->MPI_irecv(partitioning_->rightNeighbourRankNo(), p_right, length_p_leftright, req_p_right);
+        // wait for receive to finish
+        MPI_Wait(&req_p_right, MPI_STATUS_IGNORE);
+
         // set right cells
-        MPI_Wait(&req_p_right, MPI_STATUS_IGNORE); // wait for receive to finish
         for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd(); j++)
         {
             discretization_->p(discretization_->pIEnd(), j) = p_right[j];

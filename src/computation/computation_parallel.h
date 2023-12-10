@@ -15,7 +15,6 @@
 #include "output_writer/output_writer_text_parallel.h"
 #include "output_writer/output_writer_paraview_parallel.h"
 
-
 class ComputationParallel : public Computation
 {
 public:
@@ -24,12 +23,10 @@ public:
     virtual void runSimulation();
 
 protected:
-    //! TODO: which of these functions do we actually need to override?
-
     //! compute the time step width dt from maximum velocities
     void computeTimeStepWidthParallel();
-    void computeTimeStepWidthAlt();
 
+    //! communicate the preliminary velocities btw subdomains
     void communicatePreliminaryVelocities();
 
     //! set boundary values for u, v, F and G and exchange values at borders btw subdomains
@@ -44,18 +41,6 @@ protected:
     void exchangeVelocitiesTop();
     void exchangeVelocitiesLeft();
     void exchangeVelocitiesRight();
-
-    // //! compute the preliminary velocities, F and G
-    // void computePreliminaryVelocities();
-
-    // //! compute the right hand side of the Poisson equation for the pressure
-    // void computeRightHandSide();
-
-    // //! solve the Poisson equation for the pressure
-    // void computePressure();
-
-    // //! compute the new velocities, u,v, from the preliminary velocities, F,G and the pressure, p
-    // void computeVelocities();
 
     std::unique_ptr<OutputWriterParaviewParallel> outputWriterParaviewParallel_;
 

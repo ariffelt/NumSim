@@ -52,7 +52,5 @@ protected:
 
     std::array<double, 2> meshWidth_;
 
-    // std::shared_ptr<Partitioning> partitioning_;
-
     double dt_;
 };
