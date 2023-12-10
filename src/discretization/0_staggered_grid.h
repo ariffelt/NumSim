@@ -108,18 +108,13 @@ public:
     //! size of rhs
     std::array<int, 2> rhsSize() const;
 
-    int getOffsetLeft() const; //! TODO: delete if unnecessary
-
-    int getOffsetBottom() const; //! TODO: delete if unnecessary
-
-    int getOffsetLeft_rhs() const; //! TODO: delete if unnecessary
-
-    int getOffsetBottom_rhs() const; //! TODO: delete if unnecessary
-
+    //! offset used in parallel computePreliminaryVelocities and computeVelocities
     int getOffsetRight() const;
 
+    //! offset used in parallel computePreliminaryVelocities and computeVelocities
     int getOffsetTop() const;
 
+    //! offset used in parallel red_black_sor
     int sor_offset() const;
 
 
