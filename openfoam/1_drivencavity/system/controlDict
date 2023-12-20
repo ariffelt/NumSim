@@ -22,7 +22,7 @@ startTime       0;
 
 stopAt          endTime;
 
-endTime         5;
+endTime         10;
 
 deltaT          0.005; // want a Courant number of less than 1 -> Co = deltaT * |U| / dx < 1 with dt = d / n
 
