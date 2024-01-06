@@ -16,13 +16,13 @@ boundaryField
     bottomWall
     {
         type            fixedValue;
-        value           uniform 305;
+        value           uniform 300;
     }
 
     movingWall
     {
         type            fixedValue;
-        value           uniform 300;
+        value           uniform 304;
     }
 
     fixedWalls
