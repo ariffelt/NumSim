@@ -50,7 +50,7 @@ boundaryField
 
     cylinder
     {
-        type            zeroGradient;
+        type            noSlip;
     }
 }
 

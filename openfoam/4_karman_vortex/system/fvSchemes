@@ -16,7 +16,7 @@ FoamFile
 
 ddtSchemes
 {
-    default         Euler; //ToDo try backward oÄ
+    default         Euler;
 }
 
 gradSchemes
@@ -43,7 +43,7 @@ interpolationSchemes
 
 snGradSchemes
 {
-    default         orthogonal; //ToDo try out corrected
+    default         orthogonal;
 }
 
 
