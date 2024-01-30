@@ -20,20 +20,23 @@ void Computation::initialize(int argc, char *argv[])
     settings_.loadFromFile(argv[1]);
     settings_.printSettings();
 
+    // initialize partitioning
+    partitioning_ = std::make_shared<Partitioning>();
+    partitioning_->initialize(settings_.nCells);
+
     // compute the meshWidth from the physical size and the number of cells
     meshWidth_[0] = settings_.physicalSize[0] / settings_.nCells[0];
     meshWidth_[1] = settings_.physicalSize[1] / settings_.nCells[1];
 
-    // doesn't work anymore in exercise 2s framework since DonorCell now wants a Partitioning object
-    // // initialize discretization
-    // if (settings_.useDonorCell)
-    // {
-    //     discretization_ = std::make_shared<DonorCell>(settings_.nCells, meshWidth_, settings_.alpha);
-    // }
-    // else
-    // {
-    //     discretization_ = std::make_shared<CentralDifferences>(settings_.nCells, meshWidth_);
-    // }
+    // initialize discretization
+    if (settings_.useDonorCell)
+    {
+        discretization_ = std::make_shared<DonorCell>(partitioning_, meshWidth_, settings_.alpha, settings_.gamma);
+    }
+    else
+    {
+        discretization_ = std::make_shared<CentralDifferences>(partitioning_, meshWidth_);
+    }
 
     // initialize the pressure solver
     if (settings_.pressureSolver == "GaussSeidel")
@@ -50,10 +53,9 @@ void Computation::initialize(int argc, char *argv[])
         exit(1);
     }
 
-    // outputWriters have been overwritten in second exercise and thus don't work anymore for exercise 1s implementation
-    // // initialize output writers
-    // outputWriterText_ = std::make_unique<OutputWriterText>(discretization_);
-    // outputWriterParaview_ = std::make_unique<OutputWriterParaview>(discretization_);
+    // initialize output writers
+    outputWriterText_ = std::make_unique<OutputWriterText>(discretization_);
+    outputWriterParaview_ = std::make_unique<OutputWriterParaview>(discretization_);
 }
 
 /**
@@ -79,7 +81,7 @@ void Computation::runSimulation()
     while (t < settings_.endTime)
     {   
         applyBoundaryValues();                  // set boundary values for u, v, F and G
-        
+        std::cout << "boundary values applied" << std::endl;
         computeTimeStepWidth();
         if (t + dt_ > settings_.endTime)        // decrease time step width in last time step, s.t. the end time will be reached exactly
         {
@@ -87,6 +89,8 @@ void Computation::runSimulation()
         }
         t += dt_;
 
+        computeTemperature();                   // compute the temperature, T, from the velocities, u,v
+        std::cout << "temp computed" << std::endl;
         computePreliminaryVelocities();         // compute preliminary velocities, F and G
 
         computeRightHandSide();                 // compute rhs of the Poisson equation for the pressure
@@ -113,6 +117,7 @@ void Computation::computeTimeStepWidth()
 {
     // compute maximal time step width from diffusion
     double dt_diffusion = (settings_.re / 2) * (pow(discretization_->dx(), 2) * pow(discretization_->dy(), 2)) / (pow(discretization_->dx(), 2) + pow(discretization_->dy(), 2));
+    double dt_diffusion_temp = dt_diffusion * settings_.pr;
 
     double maxU = 0;
     double maxV = 0;
@@ -132,7 +137,7 @@ void Computation::computeTimeStepWidth()
 
     // subtraction of small value to ensure dt smaller and not smaller/equal than required not necessary since we scale with security factor tau < 1
     assert(settings_.tau < 1);
-    dt_ = std::min(settings_.tau * std::min(dt_diffusion, dt_convection), settings_.maximumDt);
+    dt_ = std::min(settings_.tau * std::min(std::min(dt_diffusion, dt_diffusion_temp), dt_convection), settings_.maximumDt);
 }
 
 /**
@@ -211,6 +216,40 @@ void Computation::applyBoundaryValues()
         // G boundary values right
         discretization_->g(discretization_->vIEnd(), j) = discretization_->v(discretization_->vIEnd(), j);
     }
+
+    // set T boundary values for bottom and top first, as for corner cases, the left and right border should be used
+    for (int i = discretization_->tIBegin(); i <= discretization_->tIEnd(); i++)
+    {
+        // T boundary values bottom, assuming inhomogenous Dirichlet conditions
+        discretization_->t(i, discretization_->tJBegin()) = 2.0 * settings_.dirichletBcBottomT - discretization_->t(i, discretization_->tJBegin() + 1);
+        // T boundary values top, assuming inhomogenous Dirichlet conditions
+        discretization_->t(i, discretization_->tJEnd()) = 2.0 * settings_.dirichletBcTopT - discretization_->t(i, discretization_->tJEnd() - 1);
+    }
+
+    // set T boundary values for left and right side
+    for (int j = discretization_->tJBegin(); j <= discretization_->tJEnd(); j++)
+    {
+        // T boundary values left, assuming inhomogenous Dirichlet conditions
+        discretization_->t(discretization_->tIBegin(), j) = settings_.dirichletBcLeftT;
+        // T boundary values right, assuming inhomogenous Dirichlet conditions
+        discretization_->t(discretization_->tIEnd(), j) = settings_.dirichletBcRightT;
+    }
+}
+/**
+ * Compute the temperature, T, from the velocities, u,v
+ */
+void Computation::computeTemperature()
+{
+    for (int i = discretization_->tIBegin() + 1; i < discretization_->tIEnd(); i++)
+    {
+        for (int j = discretization_->tJBegin() + 1; j < discretization_->tJEnd(); j++)
+        {
+            double diffusionTerms = (1 / (settings_.re * settings_.pr)) * (discretization_->computeD2tDx2(i, j) + discretization_->computeD2tDy2(i, j));
+            double convectionTerms = discretization_->computeDutDx(i, j) + discretization_->computeDvtDy(i, j);
+
+            discretization_->t(i, j) = discretization_->t(i, j) + dt_ * (diffusionTerms - convectionTerms);
+        }
+    }
 }
 
 /**
@@ -235,7 +274,7 @@ void Computation::computePreliminaryVelocities()
             double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2uDx2(i, j) + discretization_->computeD2uDy2(i, j));
             double convectionTerms = discretization_->computeDu2Dx(i, j) + discretization_->computeDuvDy(i, j);
 
-            discretization_->f(i, j) = discretization_->u(i, j) + dt_ * (diffusionTerms - convectionTerms + settings_.g[0]);
+            discretization_->f(i, j) = discretization_->u(i, j) + dt_ * (diffusionTerms - convectionTerms + settings_.g[0]) - (dt_ * settings_.beta *settings_.g[0] * (discretization_->t(i, j) + discretization_->t(i + 1, j)) / 2);
         }
     }
 
@@ -247,7 +286,7 @@ void Computation::computePreliminaryVelocities()
             double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2vDx2(i, j) + discretization_->computeD2vDy2(i, j));
             double convectionTerms = discretization_->computeDuvDx(i, j) + discretization_->computeDv2Dy(i, j);
 
-            discretization_->g(i, j) = discretization_->v(i, j) + dt_ * (diffusionTerms - convectionTerms + settings_.g[1]);
+            discretization_->g(i, j) = discretization_->v(i, j) + dt_ * (diffusionTerms - convectionTerms + settings_.g[1]) - (dt_ * settings_.beta *settings_.g[1] * (discretization_->t(i, j) + discretization_->t(i, j + 1)) / 2);
         }
     }
 }

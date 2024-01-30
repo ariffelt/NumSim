@@ -59,3 +59,19 @@ double Discretization::computeDpDy(int i, int j) const
 {
     return (p(i, j + 1) - p(i, j)) / dy();
 }
+
+/**
+ * Compute the 2nd derivative ∂^2 t / ∂x^2
+ */
+double Discretization::computeD2tDx2(int i, int j) const
+{
+    return (t(i + 1, j) - 2.0 * t(i, j) + t(i - 1, j)) / (dx() * dx());
+}
+
+/**
+ * Compute the 2nd derivative ∂^2 t / ∂y^2
+ */
+double Discretization::computeD2tDy2(int i, int j) const
+{
+    return (t(i, j + 1) - 2.0 * t(i, j) + t(i, j - 1)) / (dy() * dy());
+}

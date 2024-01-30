@@ -21,14 +21,14 @@ int main(int argc, char *argv[])
     // print message
     // std::cout << "Filename: \"" << filename << "\"" << std::endl;
 
-    MPI_Init(NULL, NULL);
+    //MPI_Init(NULL, NULL);
 
     // create computation object and run simulation
-    ComputationParallel computation_parallel = ComputationParallel();
-    computation_parallel.initialize(argc, argv);
-    computation_parallel.runSimulation();
+    Computation computation = Computation();
+    computation.initialize(argc, argv);
+    computation.runSimulation();
 
-    MPI_Finalize();
+    //MPI_Finalize();
 
     return EXIT_SUCCESS;
 }

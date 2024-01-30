@@ -9,8 +9,12 @@
 void Partitioning::initialize(std::array<int, 2> nCellsGlobal)
 {
     nCellsGlobal_ = nCellsGlobal;
-    MPI_Comm_size(MPI_COMM_WORLD, &nRanks_);
-    MPI_Comm_rank(MPI_COMM_WORLD, &ownRankNo_);
+    //MPI_Comm_size(MPI_COMM_WORLD, &nRanks_);
+    //MPI_Comm_rank(MPI_COMM_WORLD, &ownRankNo_);
+
+    nRanks_ = 1;
+    ownRankNo_ = 0;
+    nDomains_ = {1, 1};
 
     // compute optimal partitioning
     computePartitioning(nRanks_);
