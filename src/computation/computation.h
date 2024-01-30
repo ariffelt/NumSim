@@ -40,9 +40,14 @@ protected:
     //! compute the new velocities, u,v, from the preliminary velocities, F,G and the pressure, p
     void computeVelocities();
 
+    //! compute the new temperature, t, from the old temperature, t_old, and the velocities, u,v
+    void computeTemperature();
+
     Settings settings_;
 
     std::shared_ptr<Discretization> discretization_;
+
+    std::shared_ptr<Partitioning> partitioning_;
 
     std::unique_ptr<PressureSolver> pressureSolver_;
 

@@ -27,6 +27,9 @@ public:
     //! get a reference to field variable p
     const FieldVariable &p() const;
 
+    //! get a reference to field variable t
+    const FieldVariable &t() const;
+
     //! access value of u in element (i,j)
     double u(int i, int j) const;
 
@@ -44,6 +47,12 @@ public:
 
     //! access value of p in element (x,y)
     double &p(int i, int j);
+
+    //! access value of t in element (i,j)
+    double t(int i, int j) const;
+
+    //! access value of t in element (x,y)
+    double &t(int i, int j);
 
     //! access value of rhs in element (i,j)
     double &rhs(int i, int j);
@@ -105,6 +114,21 @@ public:
     //! size of p
     std::array<int, 2> pSize() const;
 
+    //! first valid index for t in x direction
+    int tIBegin() const;
+
+    //! last valid index for t in x direction
+    int tIEnd() const;
+
+    //! first valid index for t in y direction
+    int tJBegin() const;
+
+    //! last valid index for t in y direction
+    int tJEnd() const;
+
+    //! size of t
+    std::array<int, 2> tSize() const;
+
     //! size of rhs
     std::array<int, 2> rhsSize() const;
 
@@ -125,6 +149,7 @@ protected:
     FieldVariable u_;
     FieldVariable v_;
     FieldVariable p_;
+    FieldVariable t_;
     FieldVariable rhs_;
     FieldVariable f_;
     FieldVariable g_;

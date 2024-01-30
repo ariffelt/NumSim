@@ -155,6 +155,34 @@ void Settings::loadFromFile(std::string filename)
         {
             dirichletBcRight[1] = atof(value.c_str());
         }
+        else if (parameterName == "dirichletBcRightT" || parameterName == "dirichletRightT")
+        {
+            dirichletBcRightT = atof(value.c_str());
+        }
+        else if (parameterName == "dirichletBcLeftT" || parameterName == "dirichletLeftT")
+        {
+            dirichletBcLeftT = atof(value.c_str());
+        }
+        else if (parameterName == "dirichletBcTopT" || parameterName == "dirichletTopT")
+        {
+            dirichletBcTopT = atof(value.c_str());
+        }
+        else if (parameterName == "dirichletBcBottomT" || parameterName == "dirichletBottomT")
+        {
+            dirichletBcBottomT = atof(value.c_str());
+        }
+        else if (parameterName == "pr")
+        {
+            pr = atof(value.c_str());
+        }
+        else if (parameterName == "gamma")
+        {
+            gamma = atof(value.c_str());
+        }
+        else if (parameterName == "beta")
+        {
+            beta = atof(value.c_str());
+        }
         else if (parameterName == "pressureSolver")
         {
             pressureSolver = value;

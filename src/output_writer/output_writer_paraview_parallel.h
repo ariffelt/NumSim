@@ -1,7 +1,8 @@
 #pragma once
 
-#include "output_writer/output_writer.h"
+#include "output_writer/output_writer_paraview.h"
 #include "discretization/1_discretization.h"
+#include "partitioning/partitioning.h"
 
 #include <vtkSmartPointer.h>
 #include <vtkXMLImageDataWriter.h>
@@ -14,11 +15,10 @@
  *  This means, values will be interpolated because the values are stored at positions given by the staggered grid.
  */
 class OutputWriterParaviewParallel : 
-  public OutputWriter
-{
+  public OutputWriterParaview {
 public:
   //! constructor
-  OutputWriterParaviewParallel(std::shared_ptr<Discretization> discretization, const Partitioning &partitioning);
+  OutputWriterParaviewParallel(std::shared_ptr<Discretization> discretization, std::shared_ptr<Partitioning> partitioning);
 
   //! write current velocities to file, filename is output_<count>.vti
   void writeFile(double currentTime);
@@ -29,6 +29,8 @@ private:
   void gatherData();
 
   vtkSmartPointer<vtkXMLImageDataWriter> vtkWriter_;   //< vtk writer to write ImageData
+
+  std::shared_ptr<Partitioning> partitioning_;  //< a shared pointer to the partitioning which contains the partitioning of the mesh
 
   std::array<int,2> nCellsGlobal_;   //< global number of cells
   std::array<int,2> nPointsGlobal_;  //< global number of points

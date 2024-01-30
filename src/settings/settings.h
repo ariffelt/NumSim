@@ -11,6 +11,7 @@ struct Settings
     std::array<int, 2> nCells;          //< number of cells in x and y direction
     std::array<double, 2> physicalSize; //< physical size of the domain
     double re = 1000;                   //< Reynolds number
+    double pr = 7.0;                   //< Prandtl number
     double endTime = 10.0;              //< end time of the simulation
     double tau = 0.5;                   //< safety factor for time step width
     double maximumDt = 0.1;             //< maximum time step width
@@ -19,11 +20,19 @@ struct Settings
 
     bool useDonorCell = false; //< if the donor cell scheme should be used
     double alpha = 0.5;        //< factor for donor-cell scheme
+    double gamma = 0.5;        //< factor for donor-cell scheme for temperature
+
+    double beta = 0.04;         //< dimensionless volume expansion coefficient
 
     std::array<double, 2> dirichletBcBottom; //< prescribed values of u,v at bottom of domain
     std::array<double, 2> dirichletBcTop;    //< prescribed values of u,v at top of domain
     std::array<double, 2> dirichletBcLeft;   //< prescribed values of u,v at left of domain
     std::array<double, 2> dirichletBcRight;  //< prescribed values of u,v at right of domain
+
+    double dirichletBcBottomT; //< prescribed values of T at bottom of domain
+    double dirichletBcTopT;    //< prescribed values of T at top of domain
+    double dirichletBcLeftT;   //< prescribed values of T at left of domain
+    double dirichletBcRightT;  //< prescribed values of T at right of domain
 
     std::string pressureSolver = "SOR";  //< which pressure solver to use, "GaussSeidel" or "SOR"
     double omega = 1.0;                  //< overrelaxation factor

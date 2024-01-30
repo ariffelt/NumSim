@@ -29,7 +29,7 @@ void ComputationParallel::initialize(int argc, char *argv[])
     // initialize discretization
     if (settings_.useDonorCell)
     {
-        discretization_ = std::make_shared<DonorCell>(partitioning_, meshWidth_, settings_.alpha);
+        discretization_ = std::make_shared<DonorCell>(partitioning_, meshWidth_, settings_.alpha, settings_.gamma);
     }
     else
     {
@@ -49,8 +49,8 @@ void ComputationParallel::initialize(int argc, char *argv[])
     }
 
     // initialize output writers
-    outputWriterTextParallel_ = std::make_unique<OutputWriterTextParallel>(discretization_, *partitioning_);
-    outputWriterParaviewParallel_ = std::make_unique<OutputWriterParaviewParallel>(discretization_, *partitioning_);
+    outputWriterTextParallel_ = std::make_unique<OutputWriterTextParallel>(discretization_, partitioning_);
+    outputWriterParaviewParallel_ = std::make_unique<OutputWriterParaviewParallel>(discretization_, partitioning_);
 }
 
 /**
