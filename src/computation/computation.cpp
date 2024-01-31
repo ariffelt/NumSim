@@ -3,12 +3,13 @@
 #include "pressure_solver/sor.h"
 #include "discretization/2_donor_cell.h"
 #include "discretization/2_central_differences.h"
+#include "freeflow/virtualparticle.h"
 
 #include <cassert>
 #include <cmath>
 
 /**
- * Constructor for the Computation class. 
+ * Constructor for the Computation class.
  * Initializes the settings, discretization, pressure solver and output writers
  * @param argc number of command line arguments
  * @param argv command line arguments
@@ -70,35 +71,43 @@ void Computation::testBC()
  */
 void Computation::runSimulation()
 {
-    double t = 0.0;                                                 // starting time
-    double numberOfPrints = 10.0;                                   // number of prints to the console
-    double timestepInterval = settings_.endTime / numberOfPrints;   // time interval between two prints
+    double t = 0.0;                                               // starting time
+    double numberOfPrints = 10.0;                                 // number of prints to the console
+    double timestepInterval = settings_.endTime / numberOfPrints; // time interval between two prints
+
+    generateVirtualParticles();
 
     while (t < settings_.endTime)
-    {   
-        applyBoundaryValues();                  // set boundary values for u, v, F and G
-        
+    {
+        updateCellTypes();
+
+        applyBoundaryValues(); // set boundary values for u, v, F and G
+
         computeTimeStepWidth();
-        if (t + dt_ > settings_.endTime)        // decrease time step width in last time step, s.t. the end time will be reached exactly
+        if (t + dt_ > settings_.endTime) // decrease time step width in last time step, s.t. the end time will be reached exactly
         {
             dt_ = settings_.endTime - t;
         }
         t += dt_;
 
-        computePreliminaryVelocities();         // compute preliminary velocities, F and G
-
-        computeRightHandSide();                 // compute rhs of the Poisson equation for the pressure
+        // only compute preliminary velocities and rhs and solve pressure eq. on inner fluid cells
         
-        computePressure();                      // solve the Poisson equation for the pressure
+        computePreliminaryVelocities(); // compute preliminary velocities, F and G
 
-        computeVelocities();                    // compute the new velocities, u,v, from the preliminary velocities, F,G and the pressure, p
+        computeRightHandSide(); // compute rhs of the Poisson equation for the pressure
 
-        outputWriterParaview_->writeFile(t);    // output simulation results
+        computePressure(); // solve the Poisson equation for the pressure
+
+        computeVelocities(); // compute the new velocities, u,v, from the preliminary velocities, F,G and the pressure, p
+
+        computeParticleVelocities();
+
+        outputWriterParaview_->writeFile(t); // output simulation results
         outputWriterText_->writeFile(t);
 
         if (t >= timestepInterval)
         {
-            std::cout << "t = " << t << ", dt = " << dt_ << std::endl;  // print time and time step width to the console
+            std::cout << "t = " << t << ", dt = " << dt_ << std::endl; // print time and time step width to the console
             timestepInterval += settings_.endTime / numberOfPrints;
         }
     }
@@ -289,4 +298,105 @@ void Computation::computeVelocities()
             discretization_->v(i, j) = discretization_->g(i, j) - dt_ * (discretization_->p(i, j + 1) - discretization_->p(i, j)) / discretization_->dy();
         }
     }
+}
+
+/**
+ * Introduce virtual particles in initial state.
+ * Equally distribute them in the whole domain on a finer mesh.
+ * Only placed in volume filled with fluid, not obstacles or air.
+ */
+void Computation::generateVirtualParticles()
+{
+    // todo: remove hardcoding
+    int numParticles = 10;
+    // std::vector<Particle> particles_(numParticles);
+    for (int i = 0; i < numParticles; ++i)
+    {
+        particles_[i] = Particle(settings_.inlet[0], settings_.inlet[1]);
+    }
+}
+
+/**
+ * Compute the new particle velocities.
+ * And move particles according to these.
+ */
+void Computation::computeParticleVelocities()
+{
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
+
+    // interpolate velocities to the particle positions (do not coincide with velocity grid points)
+    for (int k = 0; k < particles_.size(); k++)
+    {
+        // compute particle velocity in x direction
+
+        // index of upper right corner
+        int iUpperRight = int(particles_[k].x / dx + 1);
+        int jUpperRight = int((particles_[k].y + 1 / 2) / dy + 1);
+
+        // position of 4 neighbouring grid points with values u
+        double x1 = (iUpperRight - 1) * dx;
+        double x2 = iUpperRight * dx;
+        double y1 = (jUpperRight - 1) * dy - dy / 2;
+        double y2 = jUpperRight * dy - dy / 2;
+
+        // bilinear interpolation
+        double u = 1 / (dx * dy) * ((x2 - particles_[k].x) * (y2 - particles_[k].y) * discretization_->u(iUpperRight - 1, jUpperRight - 1) 
+                                    + (particles_[k].x - x1) * (y2 - particles_[k].y) * discretization_->u(iUpperRight, jUpperRight - 1) 
+                                    + (x2 - particles_[k].x) * (particles_[k].y - y1) * discretization_->u(iUpperRight - 1, jUpperRight) 
+                                    + (particles_[k].x - x1) * (particles_[k].y - y1) * discretization_->u(iUpperRight, jUpperRight));
+
+        // compute particle velocity in y direction
+        // index of upper right corner
+        iUpperRight = int((particles_[k].x + 1 / 2) / dx + 1);
+        jUpperRight = int(particles_[k].y / dy + 1);
+
+        // position of 4 neighbouring grid points with values v
+        x1 = (iUpperRight - 1) * dx - dx / 2;
+        x2 = iUpperRight * dx - dx / 2;
+        y1 = (jUpperRight - 1) * dy;
+        y2 = jUpperRight * dy;
+
+        // bilinear interpolation
+        double v = 1 / (dx * dy) * ((x2 - particles_[k].x) * (y2 - particles_[k].y) * discretization_->v(iUpperRight - 1, jUpperRight - 1) 
+                                    + (particles_[k].x - x1) * (y2 - particles_[k].y) * discretization_->v(iUpperRight, jUpperRight - 1) 
+                                    + (x2 - particles_[k].x) * (particles_[k].y - y1) * discretization_->v(iUpperRight - 1, jUpperRight) 
+                                    + (particles_[k].x - x1) * (particles_[k].y - y1) * discretization_->v(iUpperRight, jUpperRight));
+
+
+        // move particle
+        particles_[k].x += dt_ * u;
+        particles_[k].y += dt_ * v;
+    }
+}
+
+/**
+ * Update the cell types.
+ */
+void Computation::updateMarkerField()
+{
+    // update marker field
+    for (int i = 0; i < discretization_->markerfieldSize()[0]; i++)
+    {
+        for (int j = 0; j < discretization_->markerfieldSize()[1]; j++)
+        {
+            discretization_->markerfield(i, j) = 0; // assume cell is empty
+            for (int k = 0; k < particles_.size(); k++)
+            {
+                if (particles_[k].x == i && particles_[k].y == j)
+                {
+                    discretization_->markerfield(i, j) = 1; // fluid cell
+                    break;
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Apply free flow boundary conditions.
+ */
+void Computation::freeflowBC()
+{
+
 }

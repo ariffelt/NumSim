@@ -13,6 +13,7 @@ StaggeredGrid::StaggeredGrid(std::array<int, 2> nCells, std::array<double, 2> me
                                                                                            u_(uSize(), {0.0, -meshWidth[1] / 2.0}, meshWidth),
                                                                                            v_(vSize(), {-meshWidth[0] / 2.0, 0.0}, meshWidth),
                                                                                            p_(pSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth),
+                                                                                           markerfield_(markerfieldSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth),
                                                                                            rhs_(rhsSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth),
                                                                                            f_(uSize(), {0.0, -meshWidth[1] / 2.0}, meshWidth),
                                                                                            g_(vSize(), {-meshWidth[0] / 2.0, 0.0}, meshWidth)
@@ -133,6 +134,22 @@ double &StaggeredGrid::f(int i, int j)
 double &StaggeredGrid::g(int i, int j)
 {
     return g_(i, j);
+}
+
+/**
+ * access value of markerfield in element (i,j)
+*/
+double StaggeredGrid::markerfield(int i, int j) const
+{
+    return markerfield_(i, j);
+}
+
+/**
+ * access value of markerfield in element (x,y)
+*/
+double &StaggeredGrid::markerfield(int i, int j)
+{
+    return markerfield_(i, j);
 }
 
 /**
@@ -267,6 +284,46 @@ int StaggeredGrid::pJEnd() const
  * get the size of p
 */
 std::array<int, 2> StaggeredGrid::pSize() const
+{
+    return {nCells_[0] + 2, nCells_[1] + 2};
+}
+
+/**
+ * get first valid index for markerfield in x direction
+*/
+int StaggeredGrid::markerfieldIBegin() const
+{
+    return 0;
+}
+
+/**
+ * get last valid index for markerfield in x direction
+*/
+int StaggeredGrid::markerfieldIEnd() const
+{
+    return nCells_[0] + 1;
+}
+
+/**
+ * get first valid index for markerfield in y direction
+*/
+int StaggeredGrid::markerfieldJBegin() const
+{
+    return 0;
+}
+
+/**
+ * get last valid index for markerfield in y direction
+*/
+int StaggeredGrid::markerfieldJEnd() const
+{
+    return nCells_[1] + 1;
+}
+
+/**
+ * get the size of markerfield
+*/
+std::array<int, 2> StaggeredGrid::markerfieldSize() const
 {
     return {nCells_[0] + 2, nCells_[1] + 2};
 }

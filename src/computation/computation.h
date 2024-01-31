@@ -40,6 +40,16 @@ private:
     //! compute the new velocities, u,v, from the preliminary velocities, F,G and the pressure, p
     void computeVelocities();
 
+    void generateVirtualParticles();
+
+    void computeParticleVelocities();
+
+    void updateCellTypes();
+
+    void updateMarkerField();
+
+    void freeflowBC();
+
     Settings settings_;
 
     std::shared_ptr<Discretization> discretization_;
@@ -53,4 +63,6 @@ private:
     std::array<double, 2> meshWidth_;
 
     double dt_;
+
+    std::vector<Particle> particles_;
 };

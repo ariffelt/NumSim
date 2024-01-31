@@ -171,6 +171,14 @@ void Settings::loadFromFile(std::string filename)
         {
             maximumNumberOfIterations = static_cast<int>(atof(value.c_str()));
         }
+        else if (parameterName == "inletX")
+        {
+            inlet[0] = atof(value.c_str());
+        }
+        else if (parameterName == "inletY")
+        {
+            inlet[1] = atof(value.c_str());
+        }
         else
         {
             std::cout << "unknown parameter \"" << parameterName << "\"." << std::endl;

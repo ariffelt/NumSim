@@ -25,6 +25,9 @@ public:
     //! get a reference to field variable p
     const FieldVariable &p() const;
 
+    //! get a reference to field variable markerfield
+    const FieldVariable &markerfield() const;
+
     //! access value of u in element (i,j)
     double u(int i, int j) const;
 
@@ -51,6 +54,12 @@ public:
 
     //! access value of G in element (i,j)
     double &g(int i, int j);
+
+    //! access value of markerfield in element (i,j)
+    double markerfield(int i, int j) const;
+
+    //! access value of markerfield in element (x,y)
+    double &markerfield(int i, int j);
 
     //! get the mesh width in x direction
     double dx() const;
@@ -103,8 +112,25 @@ public:
     //! size of p
     std::array<int, 2> pSize() const;
 
+    //! first valid index for markerfield in x direction
+    int markerfieldIBegin() const;
+
+    //! last valid index for markerfield in x direction
+    int markerfieldIEnd() const;
+
+    //! first valid index for markerfield in y direction
+    int markerfieldJBegin() const;
+
+    //! last valid index for markerfield in y direction
+    int markerfieldJEnd() const;
+
+    //! size of markerfield
+    std::array<int, 2> markerfieldSize() const;
+
     //! size of rhs
     std::array<int, 2> rhsSize() const;
+
+
 
 protected:
     const std::array<int, 2> nCells_;
@@ -116,4 +142,5 @@ protected:
     FieldVariable rhs_;
     FieldVariable f_;
     FieldVariable g_;
+    FieldVariable markerfield_;
 };
