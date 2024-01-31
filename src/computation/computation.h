@@ -7,6 +7,7 @@
 #include "pressure_solver/pressure_solver.h"
 #include "output_writer/output_writer_paraview.h"
 #include "output_writer/output_writer_text.h"
+#include "freeflow/virtualparticle.h"
 
 class Computation
 {
@@ -20,6 +21,8 @@ public:
 
     //! test the implementation of boundary conditions
     void testBC();
+
+    bool isInnerFluidCell(int i, int j);
 
 private:
     //! compute the time step width dt from maximum velocities

@@ -1,4 +1,5 @@
 #include "pressure_solver/sor.h"
+#include "computation/computation.h"
 
 #include <cassert>
 #include <cmath>
@@ -15,7 +16,8 @@ SOR::SOR(std::shared_ptr<Discretization> discretization,
          double epsilon,
          int maximumNumberOfIterations,
          double omega) : PressureSolver(discretization, epsilon, maximumNumberOfIterations),
-                         omega_(omega)
+                         omega_(omega),
+                         computation_()
 {
     assert(omega >= 1);
     assert(omega < 2);
@@ -52,10 +54,13 @@ void SOR::solve()
         {
             for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd(); j++)
             {
-                double px = (discretization_->p(i - 1, j) + discretization_->p(i + 1, j)) / (hx2);
-                double py = (discretization_->p(i, j - 1) + discretization_->p(i, j + 1)) / (hy2);
+                if (computation_.isInnerFluidCell(i, j))
+                {
+                    double px = (discretization_->p(i - 1, j) + discretization_->p(i + 1, j)) / (hx2);
+                    double py = (discretization_->p(i, j - 1) + discretization_->p(i, j + 1)) / (hy2);
 
-                discretization_->p(i, j) = (1 - omega_) * discretization_->p(i, j) + omega_ * prefactor * (px + py - discretization_->rhs(i, j));
+                    discretization_->p(i, j) = (1 - omega_) * discretization_->p(i, j) + omega_ * prefactor * (px + py - discretization_->rhs(i, j));
+                }
             }
         }
 
