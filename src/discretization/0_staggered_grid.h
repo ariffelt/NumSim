@@ -63,6 +63,9 @@ public:
     //! access value of G in element (i,j)
     double &g(int i, int j);
 
+    //! access value of Q in element (i,j)
+    double &q(int i, int j);
+
     //! get the mesh width in x direction
     double dx() const;
 
@@ -153,4 +156,5 @@ protected:
     FieldVariable rhs_;
     FieldVariable f_;
     FieldVariable g_;
+    FieldVariable q_;
 };

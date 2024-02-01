@@ -53,6 +53,8 @@ void Computation::initialize(int argc, char *argv[])
         exit(1);
     }
 
+    discretization_->q(10,10) = 1.0;
+
     // initialize output writers
     outputWriterText_ = std::make_unique<OutputWriterText>(discretization_);
     outputWriterParaview_ = std::make_unique<OutputWriterParaview>(discretization_);
@@ -230,9 +232,9 @@ void Computation::applyBoundaryValues()
     for (int j = discretization_->tJBegin(); j <= discretization_->tJEnd(); j++)
     {
         // T boundary values left, assuming inhomogenous Dirichlet conditions
-        discretization_->t(discretization_->tIBegin(), j) = settings_.dirichletBcLeftT;
+        discretization_->t(discretization_->tIBegin(), j) = 2.0 * settings_.dirichletBcLeftT - discretization_->t(discretization_->tIBegin() + 1, j);
         // T boundary values right, assuming inhomogenous Dirichlet conditions
-        discretization_->t(discretization_->tIEnd(), j) = settings_.dirichletBcRightT;
+        discretization_->t(discretization_->tIEnd(), j) = 2.0 * settings_.dirichletBcRightT - discretization_->t(discretization_->tIEnd() - 1, j);
     }
 }
 /**
@@ -247,7 +249,7 @@ void Computation::computeTemperature()
             double diffusionTerms = (1 / (settings_.re * settings_.pr)) * (discretization_->computeD2tDx2(i, j) + discretization_->computeD2tDy2(i, j));
             double convectionTerms = discretization_->computeDutDx(i, j) + discretization_->computeDvtDy(i, j);
 
-            discretization_->t(i, j) = discretization_->t(i, j) + dt_ * (diffusionTerms - convectionTerms);
+            discretization_->t(i, j) = discretization_->t(i, j) + dt_ * (diffusionTerms - convectionTerms + discretization_->q(i, j));
         }
     }
 }

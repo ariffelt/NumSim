@@ -19,7 +19,8 @@ StaggeredGrid::StaggeredGrid(const std::shared_ptr<Partitioning> partitioning, s
                                                                                                                   t_(tSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth),
                                                                                                                   rhs_(rhsSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth),
                                                                                                                   f_(uSize(), {0.0, -meshWidth[1] / 2.0}, meshWidth),
-                                                                                                                  g_(vSize(), {-meshWidth[0] / 2.0, 0.0}, meshWidth)
+                                                                                                                  g_(vSize(), {-meshWidth[0] / 2.0, 0.0}, meshWidth),
+                                                                                                                  q_(tSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth)
 {
     assert(nCells_[0] > 0);
     assert(nCells_[1] > 0);
@@ -161,6 +162,14 @@ double &StaggeredGrid::f(int i, int j)
 double &StaggeredGrid::g(int i, int j)
 {
     return g_(i, j);
+}
+
+/**
+ * access value of Q in element (i,j)
+ */
+double &StaggeredGrid::q(int i, int j)
+{
+    return q_(i, j);
 }
 
 /**
