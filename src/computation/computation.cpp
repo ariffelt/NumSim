@@ -489,4 +489,128 @@ void Computation::freeflowBC()
     // for loops over all p cells
     // check if cell is fluid cell
     // check if it has 
+    for (int i = 1; i < discretization_->pSize()[0] - 1; i++)
+    {
+        for (int j = 1; j < discretization_->pSize()[1] - 1; j++)
+        {
+            if (!isInnerFluidCell(i,j))
+            {
+                // check if the right, top, left or bottom cell is a fluid cell
+                if (discretization_->markerfield(i + 1, j) == 1)
+                {
+                    if (discretization_->markerfield(i, j + 1) == 1)
+                    {
+                        if (discretization_->markerfield(i - 1, j) == 1)
+                        {
+                            // cell is surrounded by 3 fluid cells (bottom wall)
+                            break;
+                        }
+                        else
+                        {
+                            if (discretization_->markerfield(i, j - 1) == 1)
+                            {
+                                // cell is surrounded by 3 fluid cells (right wall)
+                                break;
+                            }
+                            else
+                            {
+                                // cell is surrounded by 2 fluid cells (right, bottom corner)
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (discretization_->markerfield(i - 1, j) == 1)
+                        {
+                            if (discretization_->markerfield(i, j - 1) == 1)
+                            {
+                                // cell is surrounded by 3 fluid cells (top wall)
+                                break;
+                            }
+                            else
+                            {
+                                // cell is surrounded by 2 fluid cells (horizontal pipe)
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            if (discretization_->markerfield(i, j - 1) == 1)
+                            {
+                                // cell is surrounded by 2 fluid cells (top, right corner)
+                                break;
+                            }
+                            else
+                            {
+                                // cell is surrounded by 1 fluid cell (tip from right)
+                                break;
+                            }
+                        }
+                    }
+                }
+                else 
+                {
+                    if (discretization_->markerfield(i, j + 1) == 1)
+                    {
+                        if (discretization_->markerfield(i - 1, j) == 1)
+                        {
+                            if (discretization_->markerfield(i, j - 1) == 1)
+                            {
+                                // cell is surrounded by 3 fluid cells (right wall)
+                                break;
+                            }
+                            else
+                            {
+                                // cell is surrounded by 2 fluid cells (bottom, left corner)
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            if (discretization_->markerfield(i, j - 1) == 1)
+                            {
+                                // cell is surrounded by 2 fluid cells (vertikal pipe)
+                                break;
+                            }
+                            else
+                            {
+                                // cell is surrounded by 1 fluid cell (tip from top)
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (discretization_->markerfield(i - 1, j) == 1)
+                        {
+                            if (discretization_->markerfield(i, j - 1) == 1)
+                            {
+                                // cell is surrounded by 2 fluid cells (top, right corner)
+                                break;
+                            }
+                            else
+                            {
+                                // cell is surrounded by 1 fluid cell (tip from left)
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            if (discretization_->markerfield(i, j - 1) == 1)
+                            {
+                                // cell is surrounded by 1 fluid cell (tip from bottom)
+                                break;
+                            }
+                            else
+                            {
+                                // cell is surrounded by 0 fluid cells (drop)
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
