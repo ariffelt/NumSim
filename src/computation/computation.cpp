@@ -75,7 +75,11 @@ void Computation::runSimulation()
     double numberOfPrints = 10.0;                                 // number of prints to the console
     double timestepInterval = settings_.endTime / numberOfPrints; // time interval between two prints
 
+    std::cout << "starting simulation" << std::endl; 
+
     generateVirtualParticles();
+
+    std::cout << "generated particles" << std::endl;
 
     updateMarkerField();
 
@@ -503,18 +507,21 @@ void Computation::freeflowBC()
                         if (discretization_->markerfield(i - 1, j) == 1)
                         {
                             // cell is surrounded by 3 fluid cells (bottom wall)
+                            bottomWallBC(i,j);
                             break;
                         }
                         else
                         {
                             if (discretization_->markerfield(i, j - 1) == 1)
                             {
-                                // cell is surrounded by 3 fluid cells (right wall)
+                                // cell is surrounded by 3 fluid cells (left wall)
+                                leftWallBC(i,j);
                                 break;
                             }
                             else
                             {
-                                // cell is surrounded by 2 fluid cells (right, bottom corner)
+                                // cell is surrounded by 2 fluid cells (left, bottom corner)
+                                bottomLeftCornerBC(i,j);
                                 break;
                             }
                         }
@@ -526,11 +533,13 @@ void Computation::freeflowBC()
                             if (discretization_->markerfield(i, j - 1) == 1)
                             {
                                 // cell is surrounded by 3 fluid cells (top wall)
+                                topWallBC(i,j);
                                 break;
                             }
                             else
                             {
                                 // cell is surrounded by 2 fluid cells (horizontal pipe)
+                                horizontalPipeBC(i,j);
                                 break;
                             }
                         }
@@ -538,12 +547,14 @@ void Computation::freeflowBC()
                         {
                             if (discretization_->markerfield(i, j - 1) == 1)
                             {
-                                // cell is surrounded by 2 fluid cells (top, right corner)
+                                // cell is surrounded by 2 fluid cells (top, left corner)
+                                topLeftCornerBC(i,j);
                                 break;
                             }
                             else
                             {
                                 // cell is surrounded by 1 fluid cell (tip from right)
+                                tipFromRightBC(i,j);
                                 break;
                             }
                         }
@@ -558,11 +569,13 @@ void Computation::freeflowBC()
                             if (discretization_->markerfield(i, j - 1) == 1)
                             {
                                 // cell is surrounded by 3 fluid cells (right wall)
+                                rightWallBC(i,j);
                                 break;
                             }
                             else
                             {
-                                // cell is surrounded by 2 fluid cells (bottom, left corner)
+                                // cell is surrounded by 2 fluid cells (bottom, right corner)
+                                bottomRightCornerBC(i,j);
                                 break;
                             }
                         }
@@ -570,12 +583,14 @@ void Computation::freeflowBC()
                         {
                             if (discretization_->markerfield(i, j - 1) == 1)
                             {
-                                // cell is surrounded by 2 fluid cells (vertikal pipe)
+                                // cell is surrounded by 2 fluid cells (vertical pipe)
+                                verticalPipeBC(i,j);
                                 break;
                             }
                             else
                             {
                                 // cell is surrounded by 1 fluid cell (tip from top)
+                                tipFromTopBC(i,j);
                                 break;
                             }
                         }
@@ -587,11 +602,13 @@ void Computation::freeflowBC()
                             if (discretization_->markerfield(i, j - 1) == 1)
                             {
                                 // cell is surrounded by 2 fluid cells (top, right corner)
+                                topRightCornerBC(i,j);
                                 break;
                             }
                             else
                             {
                                 // cell is surrounded by 1 fluid cell (tip from left)
+                                tipFromLeftBC(i,j);
                                 break;
                             }
                         }
@@ -600,11 +617,13 @@ void Computation::freeflowBC()
                             if (discretization_->markerfield(i, j - 1) == 1)
                             {
                                 // cell is surrounded by 1 fluid cell (tip from bottom)
+                                tipFromBottomBC(i,j);
                                 break;
                             }
                             else
                             {
                                 // cell is surrounded by 0 fluid cells (drop)
+                                dropBC(i,j);
                                 break;
                             }
                         }
@@ -613,4 +632,290 @@ void Computation::freeflowBC()
             }
         }
     }
+}
+
+/**
+ * compute the boundary conditions for the bottom wall
+ */
+void Computation::bottomWallBC(int i, int j)
+{
+    // mass balance
+    discretization_->v(i,j-1) = discretization_->v(i,j) + discretization_->dy() / discretization_->dx() * (discretization_->u(i,j) - discretization_->u(i-1,j));
+
+    // tangential stress
+    discretization_->u(i-1,j-1) = discretization_->u(i-1,j) + discretization_->dy() / discretization_->dx() * (discretization_->v(i,j-1) - discretization_->v(i-1,j-1));
+
+    // normal stress
+    discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->v(i,j) - discretization_->v(i,j-1)) / discretization_->dy();
+}
+
+/**
+ * compute the boundary conditions for the left wall
+ */
+void Computation::leftWallBC(int i, int j)
+{
+    // mass balance
+    discretization_->u(i-1,j) = discretization_->u(i,j) + discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
+
+    // tangential stress
+    discretization_->v(i-1,j-1) = discretization_->v(i,j-1) + discretization_->dx() / discretization_->dy() * (discretization_->u(i-1,j) - discretization_->u(i-1,j-1));
+
+    // normal stress
+    discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->u(i,j) - discretization_->u(i-1,j)) / discretization_->dx();
+}
+
+/**
+ * compute the boundary conditions for the bottom left corner
+ */
+void Computation::bottomLeftCornerBC(int i, int j)
+{
+    // mass balance + tangential stress
+    discretization_->u(i-1,j) = discretization_->u(i,j);
+    discretization_->v(i,j-1) = discretization_->v(i,j);
+    discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
+    discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
+                                
+    // normal stress
+    discretization_->p(i,j) = 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j+1) + discretization_->u(i-1,j+1) - discretization_->u(i,j) - discretization_->u(i-1,j)) / (discretization_->dy()) + (discretization_->v(i+1,j) + discretization_->v(i+1,j-1) - discretization_->v(i,j) - discretization_->v(i,j-1)) / (discretization_->dx()));
+}
+
+/**
+ * compute the boundary conditions for the top wall
+ */
+void Computation::topWallBC(int i, int j)
+{
+    // mass balance
+    discretization_->v(i,j) = discretization_->v(i,j-1) - discretization_->dy() / discretization_->dx() * (discretization_->u(i,j) - discretization_->u(i-1,j));
+
+    // tangential stress
+    discretization_->u(i-1,j+1) = discretization_->u(i-1,j) - discretization_->dy() / discretization_->dx() * (discretization_->v(i,j) - discretization_->v(i-1,j));
+
+    // normal stress
+    discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->v(i,j) - discretization_->v(i,j-1)) / discretization_->dy();
+}
+
+/**
+ * compute the boundary conditions for the horizontal pipe
+ */
+void Computation::horizontalPipeBC(int i, int j)
+{
+    // external forces
+    discretization_->v(i,j) = discretization_->v(i,j) + dt_ * settings_.g[1];
+    discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
+
+    // tangential stress
+    discretization_->u(i-1,j+1) = discretization_->u(i-1,j) - discretization_->dy() / discretization_->dx() * (discretization_->v(i,j) - discretization_->v(i-1,j));
+    discretization_->u(i-1,j-1) = discretization_->u(i-1,j) + discretization_->dy() / discretization_->dx() * (discretization_->v(i,j-1) - discretization_->v(i-1,j-1));
+                                
+    // normal stress
+    discretization_->p(i,j) = 0.0;
+}
+
+/**
+ * compute the boundary conditions for the top left corner
+ */
+void Computation::topLeftCornerBC(int i, int j)
+{
+    // mass balance + tangential stress
+    discretization_->v(i,j) = discretization_->v(i,j-1);
+    discretization_->u(i,j) = discretization_->u(i-1,j);
+    discretization_->u(i-1,j) = discretization_->u(i,j);
+    discretization_->v(i-1,j) = discretization_->v(i,j);
+
+    // tangential stress
+    discretization_->v(i-1,j-1) = discretization_->v(i,j-1) + discretization_->dx() / discretization_->dy() * (discretization_->u(i-1,j) - discretization_->u(i-1,j-1));
+
+    // normal stress
+    discretization_->p(i,j) = - 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j) + discretization_->u(i-1,j) - discretization_->u(i,j-1) - discretization_->u(i-1,j-1)) / (discretization_->dy()) + (discretization_->v(i+1,j) + discretization_->v(i+1,j-1) - discretization_->v(i,j) - discretization_->v(i,j-1)) / (discretization_->dx()));
+}
+
+/**
+ * compute the boundary conditions for the tip from right
+ */
+void Computation::tipFromRightBC(int i, int j)
+{
+    // external forces
+    discretization_->v(i,j) = discretization_->v(i,j) + dt_ * settings_.g[1];
+    discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
+
+    // mass balance
+    discretization_->u(i-1,j) = discretization_->u(i,j) + discretization_->dy() / discretization_->dx() * (discretization_->v(i,j) - discretization_->v(i,j-1));
+                                
+    // mass balance + tangential stress
+    discretization_->v(i-1,j) = discretization_->v(i,j);
+    discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
+    discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
+    discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
+
+    // normal stress
+    discretization_->p(i,j) = 0.0;
+}
+
+/**
+ * compute the boundary conditions for the right wall
+ */
+void Computation::rightWallBC(int i, int j)
+{
+    // mass balance
+    discretization_->u(i,j) = discretization_->u(i-1,j) - discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
+
+    // tangential stress
+    discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->u(i,j) - discretization_->u(i-1,j)) / discretization_->dx();
+
+    // normal stress
+    discretization_->v(i+1,j-1) = discretization_->v(i,j-1) - discretization_->dx() / discretization_->dy() * (discretization_->u(i,j) - discretization_->u(i,j-1));
+}
+
+/**
+ * compute the boundary conditions for the bottom right corner
+ */
+void Computation::bottomRightCornerBC(int i, int j)
+{
+    // mass balance + tangential stress
+    discretization_->u(i,j) = discretization_->u(i-1,j);
+    discretization_->v(i,j-1) = discretization_->v(i,j);
+    discretization_->u(i,j-1) = discretization_->u(i,j);
+    discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
+
+    // tangential stress
+    discretization_->u(i-1,j-1) = discretization_->u(i-1,j) + discretization_->dy() / discretization_->dx() * (discretization_->v(i,j-1) - discretization_->v(i-1,j-1));
+                                
+    // normal stress
+    discretization_->p(i,j) = - 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j+1) + discretization_->u(i-1,j+1) - discretization_->u(i,j) - discretization_->u(i-1,j)) / (discretization_->dy()) + (discretization_->v(i,j) + discretization_->v(i,j-1) - discretization_->v(i-1,j) - discretization_->v(i-1,j-1)) / (discretization_->dx()));
+}
+
+/**
+ * compute the boundary conditions for the vertical pipe
+ */
+void Computation::verticalPipeBC(int i, int j)
+{
+    // external forces
+    discretization_->u(i,j) = discretization_->u(i,j) + dt_ * settings_.g[0];
+    discretization_->u(i-1,j) = discretization_->u(i-1,j) + dt_ * settings_.g[0];
+
+    // tangential stress
+    discretization_->v(i-1, j-1) = discretization_->v(i,j-1) + discretization_->dx() / discretization_->dy() * (discretization_->u(i-1,j) - discretization_->u(i-1,j-1));
+    discretization_->v(i+1,j-1) = discretization_->v(i,j-1) - discretization_->dx() / discretization_->dy() * (discretization_->u(i,j) - discretization_->u(i,j-1));
+
+    // normal stress
+    //TODO: check, should maybe not be zero
+    discretization_->p(i,j) = 0.0;
+}
+
+/**
+ * compute the boundary conditions for the tip from top
+ */
+void Computation::tipFromTopBC(int i, int j)
+{
+    // external forces
+    discretization_->u(i,j) = discretization_->u(i,j) + dt_ * settings_.g[0];
+    discretization_->u(i-1,j) = discretization_->u(i-1,j) + dt_ * settings_.g[0];
+
+    // normal stress
+    discretization_->p(i,j) = 0.0;
+
+    // mass balance
+    discretization_->v(i,j-1) = discretization_->v(i,j) + discretization_->dy() / discretization_->dx() * (discretization_->u(i,j) - discretization_->u(i-1,j));
+
+    // mass balance + tangential stress
+    discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
+    discretization_->u(i,j-1) = discretization_->u(i,j);
+    discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
+    discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
+}
+
+/**
+ * compute the boundary conditions for the top right corner
+ */
+void Computation::topRightCornerBC(int i, int j)
+{
+    // mass balance + tangential stress
+    discretization_->u(i,j) = discretization_->u(i-1,j);
+    discretization_->v(i,j) = discretization_->v(i,j-1);
+    discretization_->u(i,j+1) = discretization_->u(i,j);
+    discretization_->v(i+1,j) = discretization_->v(i,j);
+
+    // normal stress
+    discretization_->p(i,j) = 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j) + discretization_->u(i-1,j) - discretization_->u(i,j-1) - discretization_->u(i-1,j-1)) / (discretization_->dy()) + (discretization_->v(i,j) + discretization_->v(i,j-1) - discretization_->v(i-1,j) - discretization_->v(i-1,j-1)) / (discretization_->dx()));
+
+    // tangential stress
+    discretization_->u(i-1,j+1) = discretization_->u(i-1,j) - discretization_->dy() / discretization_->dx() * (discretization_->v(i,j) - discretization_->v(i-1,j));
+    discretization_->v(i+1,j-1) = discretization_->v(i,j-1) - discretization_->dx() / discretization_->dy() * (discretization_->u(i,j) - discretization_->u(i,j-1));
+}
+
+/**
+ * compute the boundary conditions for the tip from left
+*/
+void Computation::tipFromLeftBC(int i, int j)
+{
+    // external forces
+    discretization_->v(i,j) = discretization_->v(i,j) + dt_ * settings_.g[1];
+    discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
+
+    // pressure is set to 0
+    discretization_->p(i,j) = 0.0;
+
+    // mass balance
+    discretization_->u(i,j) = discretization_->u(i-1,j) - discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
+
+    // mass balance + tangential stress
+    discretization_->v(i+1,j) = discretization_->v(i,j);
+    discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
+    discretization_->u(i,j+1) = discretization_->u(i,j);
+    discretization_->u(i,j-1) = discretization_->u(i,j);
+
+    // tangential stress
+    discretization_->u(i-1,j+1) = discretization_->u(i-1,j) - discretization_->dy() / discretization_->dx() * (discretization_->v(i,j) - discretization_->v(i-1,j));
+    discretization_->u(i-1,j-1) = discretization_->u(i-1,j) + discretization_->dy() / discretization_->dx() * (discretization_->v(i,j-1) - discretization_->v(i-1,j-1));
+}
+
+/*
+ * compute the boundary conditions for the tip from bottom
+*/
+void Computation::tipFromBottomBC(int i, int j)
+{
+    // external forces
+    discretization_->u(i,j) = discretization_->u(i,j) + dt_ * settings_.g[0];
+    discretization_->u(i-1,j) = discretization_->u(i-1,j) + dt_ * settings_.g[0];
+
+    // mass balance
+    discretization_->v(i,j) = discretization_->v(i,j-1) - discretization_->dy() / discretization_->dx() * (discretization_->u(i,j) - discretization_->u(i-1,j));
+
+    // mass balance + tangential stress
+    discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
+    discretization_->u(i,j+1) = discretization_->u(i,j);
+    discretization_->v(i-1,j) = discretization_->v(i,j);
+    discretization_->v(i+1,j) = discretization_->v(i,j);
+
+    // tangential stress
+    discretization_->v(i-1,j-1) = discretization_->v(i,j-1) + discretization_->dx() / discretization_->dy() * (discretization_->u(i-1,j) - discretization_->u(i-1,j-1));
+    discretization_->v(i+1,j-1) = discretization_->v(i,j-1) - discretization_->dx() / discretization_->dy() * (discretization_->u(i,j) - discretization_->u(i,j-1));
+
+    // pressure is set to 0
+    discretization_->p(i,j) = 0.0;
+}
+
+/*
+ * compute the boundary conditions for the drop
+*/
+void Computation::dropBC(int i, int j)
+{
+    // external forces
+    discretization_->u(i,j) = discretization_->u(i,j) + dt_ * settings_.g[0];
+    discretization_->u(i-1,j) = discretization_->u(i-1,j) + dt_ * settings_.g[0];
+    discretization_->v(i,j) = discretization_->v(i,j) + dt_ * settings_.g[1];
+    discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
+                                
+    // pressure is set to 0
+    discretization_->p(i,j) = 0.0;
+
+    // mass balance + tangential stress
+    discretization_->u(i,j+1) = discretization_->u(i,j);
+    discretization_->u(i,j-1) = discretization_->u(i,j);
+    discretization_->v(i+1,j) = discretization_->v(i,j);
+    discretization_->v(i-1,j) = discretization_->v(i,j);
+    discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
+    discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
+    discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
+    discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
 }

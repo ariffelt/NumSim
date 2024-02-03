@@ -47,11 +47,45 @@ private:
 
     void computeParticleVelocities();
 
-    void updateCellTypes();
+    // void updateCellTypes();
 
     void updateMarkerField();
 
     void freeflowBC();
+
+    void bottomWallBC(int i, int j);
+
+    void leftWallBC(int i, int j);
+
+    void bottomLeftCornerBC(int i, int j);
+
+    void topWallBC(int i, int j);
+
+    void horizontalPipeBC(int i, int j);
+
+    void topLeftCornerBC(int i, int j);
+
+    void tipFromRightBC(int i, int j);  
+
+    void rightWallBC(int i, int j);
+
+    void bottomRightCornerBC(int i, int j); 
+
+    void verticalPipeBC(int i, int j);
+
+    void tipFromTopBC(int i, int j);
+
+    void topRightCornerBC(int i, int j);
+
+    void tipFromLeftBC(int i, int j);
+
+    void tipFromBottomBC(int i, int j);
+
+    void dropBC(int i, int j);
+
+    
+
+
 
     Settings settings_;
 
