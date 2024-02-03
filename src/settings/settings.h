@@ -31,6 +31,8 @@ struct Settings
     double epsilon = 1e-5;               //< tolerance for the residual in the pressure solver
     int maximumNumberOfIterations = 1e5; //< maximum number of iterations in the solver
 
+    std::string particelShape = "DEFAULT";
+
     //! parse a text file with settings, each line contains "<parameterName> = <value>"
     void loadFromFile(std::string filename);
 

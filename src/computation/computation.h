@@ -7,7 +7,7 @@
 #include "pressure_solver/pressure_solver.h"
 #include "output_writer/output_writer_paraview.h"
 #include "output_writer/output_writer_text.h"
-#include "freeflow/virtualparticle.h"
+// #include "freeflow/virtualparticle.h"
 
 class Computation
 {
@@ -47,6 +47,8 @@ private:
 
     void computeParticleVelocities();
 
+    void generateDam(int noParticles);
+
     // void updateCellTypes();
 
     void updateMarkerField();
@@ -83,6 +85,7 @@ private:
 
     void dropBC(int i, int j);
 
+    void printParticles();
     
 
 
@@ -101,5 +104,6 @@ private:
 
     double dt_;
 
-    std::vector<Particle> particles_;
+    std::vector<double> particlesX_;
+    std::vector<double> particlesY_;
 };

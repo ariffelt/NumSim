@@ -179,6 +179,11 @@ void Settings::loadFromFile(std::string filename)
         {
             inlet[1] = atof(value.c_str());
         }
+        else if (parameterName == "particleShape")
+        {
+            particelShape = value;
+        }
+
         else
         {
             std::cout << "unknown parameter \"" << parameterName << "\"." << std::endl;

@@ -75,13 +75,14 @@ void Computation::runSimulation()
     double numberOfPrints = 10.0;                                 // number of prints to the console
     double timestepInterval = settings_.endTime / numberOfPrints; // time interval between two prints
 
-    std::cout << "starting simulation" << std::endl; 
-
     generateVirtualParticles();
 
-    std::cout << "generated particles" << std::endl;
-
     updateMarkerField();
+
+    outputWriterParaview_->writeFile(t); // output simulation results
+    outputWriterText_->writeFile(t);
+
+    // std::cout << "updated marker field" << std::endl;
 
     while (t < settings_.endTime)
     {
@@ -93,6 +94,8 @@ void Computation::runSimulation()
             dt_ = settings_.endTime - t;
         }
         t += dt_;
+        std::cout << "t = " << t  << std::endl; // print time and time step width to the console
+        printParticles();
 
         // only compute preliminary velocities and rhs and solve pressure eq. on inner fluid cells
         
@@ -106,11 +109,13 @@ void Computation::runSimulation()
 
         freeflowBC(); // apply free flow boundary conditions
 
+        applyBoundaryValues(); // set boundary values for u, v, F and G
+
         computeParticleVelocities();
 
-        updateMarkerField();
+        updateMarkerField(); 
 
-        freeflowBC();
+        freeflowBC(); // apply free flow boundary conditions
 
         outputWriterParaview_->writeFile(t); // output simulation results
         outputWriterText_->writeFile(t);
@@ -120,6 +125,14 @@ void Computation::runSimulation()
             std::cout << "t = " << t << ", dt = " << dt_ << std::endl; // print time and time step width to the console
             timestepInterval += settings_.endTime / numberOfPrints;
         }
+    }
+}
+
+void Computation::printParticles()
+{
+    for (int i = 0; i < particlesX_.size(); i++)
+    {
+        std::cout << "\t Particle " << i << " at position (" << particlesX_[i] << ", " << particlesY_[i] << ")" << std::endl;
     }
 }
 
@@ -190,12 +203,12 @@ void Computation::applyBoundaryValues()
     // set v boundary values for bottom and top first, as for corner cases, the left and right border should be used
     for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); i++)
     {
-        if (discretization_->markerfield(i,discretization_->vJBegin()) == 1)
+        //if (discretization_->markerfield(i,discretization_->vJBegin()) == 1)
         {
             // v boundary values bottom, assuming inhomogenous Dirichlet conditions
             discretization_->v(i, discretization_->vJBegin()) = settings_.dirichletBcBottom[1];
         }
-        if (discretization_->markerfield(i,discretization_->vJEnd() - 1) == 1)
+        //if (discretization_->markerfield(i,discretization_->vJEnd() - 1) == 1)
         {
             // v boundary values top, assuming inhomogenous Dirichlet conditions
             discretization_->v(i, discretization_->vJEnd() - 1) = settings_.dirichletBcTop[1];
@@ -381,11 +394,33 @@ void Computation::computeVelocities()
 void Computation::generateVirtualParticles()
 {
     // todo: remove hardcoding
-    int numParticles = 10;
-    // std::vector<Particle> particles_(numParticles);
-    for (int i = 0; i < numParticles; ++i)
+    if (settings_.particelShape == "DAM")
     {
-        particles_[i] = Particle(settings_.inlet[0], settings_.inlet[1]);
+        generateDam(20);
+    }
+    else
+    {
+    particlesX_ = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0,1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1,1.1,1.1};	
+    particlesY_ = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0,1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1,1.1,1.1};	
+    }
+}
+
+void Computation::generateDam(int noParticles)
+{
+    // Distribute the noParticles equally in a box in the left lower corner of the domain
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
+
+    particlesX_ = {};
+    particlesY_ = {};
+
+    for (int i=0; i<int(settings_.nCells[1]/ 4-1); i++)
+    {
+        for (int j=0; j<int(settings_.nCells[1]-1); j++)
+        {
+            particlesX_.push_back(i*dx);
+            particlesY_.push_back(j*dy);
+        }
     }
 }
 
@@ -399,13 +434,13 @@ void Computation::computeParticleVelocities()
     double dy = discretization_->dy();
 
     // interpolate velocities to the particle positions (do not coincide with velocity grid points)
-    for (int k = 0; k < particles_.size(); k++)
+    for (int k = 0; k < particlesX_.size(); k++)
     {
         // compute particle velocity in x direction
 
         // index of upper right corner
-        int iUpperRight = int(particles_[k].x / dx + 1);
-        int jUpperRight = int((particles_[k].y + 1 / 2) / dy + 1);
+        int iUpperRight = int(particlesX_[k] / dx + 1);
+        int jUpperRight = int((particlesY_[k] + 1 / 2) / dy + 1);
 
         // position of 4 neighbouring grid points with values u
         double x1 = (iUpperRight - 1) * dx;
@@ -413,16 +448,18 @@ void Computation::computeParticleVelocities()
         double y1 = (jUpperRight - 1) * dy - dy / 2;
         double y2 = jUpperRight * dy - dy / 2;
 
+
+
         // bilinear interpolation
-        double u = 1 / (dx * dy) * ((x2 - particles_[k].x) * (y2 - particles_[k].y) * discretization_->u(iUpperRight - 1, jUpperRight - 1) 
-                                    + (particles_[k].x - x1) * (y2 - particles_[k].y) * discretization_->u(iUpperRight, jUpperRight - 1) 
-                                    + (x2 - particles_[k].x) * (particles_[k].y - y1) * discretization_->u(iUpperRight - 1, jUpperRight) 
-                                    + (particles_[k].x - x1) * (particles_[k].y - y1) * discretization_->u(iUpperRight, jUpperRight));
+        double u = 1 / (dx * dy) * ((x2 - particlesX_[k]) * (y2 - particlesY_[k]) * discretization_->u(iUpperRight - 1, jUpperRight - 1) 
+                                    + (particlesX_[k] - x1) * (y2 - particlesY_[k]) * discretization_->u(iUpperRight, jUpperRight - 1) 
+                                    + (x2 - particlesX_[k]) * (particlesY_[k] - y1) * discretization_->u(iUpperRight - 1, jUpperRight) 
+                                    + (particlesX_[k] - x1) * (particlesY_[k] - y1) * discretization_->u(iUpperRight, jUpperRight));
 
         // compute particle velocity in y direction
         // index of upper right corner
-        iUpperRight = int((particles_[k].x + 1 / 2) / dx + 1);
-        jUpperRight = int(particles_[k].y / dy + 1);
+        iUpperRight = int((particlesX_[k] + 1 / 2) / dx + 1);
+        jUpperRight = int(particlesY_[k] / dy + 1);
 
         // position of 4 neighbouring grid points with values v
         x1 = (iUpperRight - 1) * dx - dx / 2;
@@ -431,16 +468,18 @@ void Computation::computeParticleVelocities()
         y2 = jUpperRight * dy;
 
         // bilinear interpolation
-        double v = 1 / (dx * dy) * ((x2 - particles_[k].x) * (y2 - particles_[k].y) * discretization_->v(iUpperRight - 1, jUpperRight - 1) 
-                                    + (particles_[k].x - x1) * (y2 - particles_[k].y) * discretization_->v(iUpperRight, jUpperRight - 1) 
-                                    + (x2 - particles_[k].x) * (particles_[k].y - y1) * discretization_->v(iUpperRight - 1, jUpperRight) 
-                                    + (particles_[k].x - x1) * (particles_[k].y - y1) * discretization_->v(iUpperRight, jUpperRight));
+        double v = 1 / (dx * dy) * ((x2 - particlesX_[k]) * (y2 - particlesY_[k]) * discretization_->v(iUpperRight - 1, jUpperRight - 1) 
+                                    + (particlesX_[k] - x1) * (y2 - particlesY_[k]) * discretization_->v(iUpperRight, jUpperRight - 1) 
+                                    + (x2 - particlesX_[k]) * (particlesY_[k] - y1) * discretization_->v(iUpperRight - 1, jUpperRight) 
+                                    + (particlesX_[k] - x1) * (particlesY_[k] - y1) * discretization_->v(iUpperRight, jUpperRight));
 
 
         // move particle
-        particles_[k].x += dt_ * u;
-        particles_[k].y += dt_ * v;
+        particlesX_[k] += dt_ * u;
+        particlesY_[k] += dt_ * v;
     }
+
+    std::cout << "Particle velocities computed" << std::endl;
 }
 
 /**
@@ -454,15 +493,15 @@ void Computation::updateMarkerField()
         for (int j = 0; j < discretization_->markerfieldSize()[1]; j++)
         {
             discretization_->markerfield(i, j) = 0; // assume cell is empty
-            for (int k = 0; k < particles_.size(); k++)
-            {
-                if (particles_[k].x == i && particles_[k].y == j)
-                {
-                    discretization_->markerfield(i, j) = 1; // fluid cell
-                    break;
-                }
-            }
         }
+    }
+
+    for (int k = 0; k < particlesX_.size(); k++)
+    {
+        int i = int(particlesX_[k] / discretization_->dx() + 1);
+        int j = int(particlesY_[k] / discretization_->dy() + 1);
+        discretization_->markerfield(i, j) = 1; // assume cell is fluid    
+        std::cout << "i = " << i << " j = " << j << std::endl;
     }
 }
 
@@ -497,7 +536,7 @@ void Computation::freeflowBC()
     {
         for (int j = 1; j < discretization_->pSize()[1] - 1; j++)
         {
-            if (!isInnerFluidCell(i,j))
+            if (!isInnerFluidCell(i,j) && discretization_->markerfield(i, j) == 1)
             {
                 // check if the right, top, left or bottom cell is a fluid cell
                 if (discretization_->markerfield(i + 1, j) == 1)
@@ -739,7 +778,7 @@ void Computation::tipFromRightBC(int i, int j)
     discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
 
     // mass balance
-    discretization_->u(i-1,j) = discretization_->u(i,j) + discretization_->dy() / discretization_->dx() * (discretization_->v(i,j) - discretization_->v(i,j-1));
+    discretization_->u(i-1,j) = discretization_->u(i,j) + discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
                                 
     // mass balance + tangential stress
     discretization_->v(i-1,j) = discretization_->v(i,j);
