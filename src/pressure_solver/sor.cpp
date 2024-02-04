@@ -16,8 +16,7 @@ SOR::SOR(std::shared_ptr<Discretization> discretization,
          double epsilon,
          int maximumNumberOfIterations,
          double omega) : PressureSolver(discretization, epsilon, maximumNumberOfIterations),
-                         omega_(omega),
-                         computation_()
+                         omega_(omega)
 {
     assert(omega >= 1);
     assert(omega < 2);
@@ -54,11 +53,11 @@ void SOR::solve()
         {
             for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd(); j++)
             {
-                if (computation_.isInnerFluidCell(i, j))
+                if (isInnerFluidCell(i, j))
                 {
                     double px = (discretization_->p(i - 1, j) + discretization_->p(i + 1, j)) / (hx2);
                     double py = (discretization_->p(i, j - 1) + discretization_->p(i, j + 1)) / (hy2);
-
+                    
                     discretization_->p(i, j) = (1 - omega_) * discretization_->p(i, j) + omega_ * prefactor * (px + py - discretization_->rhs(i, j));
                 }
             }
@@ -73,4 +72,23 @@ void SOR::solve()
         // update residual
         res2 = getResidual();
     }
+}
+
+/**
+ * Check if cell has any neighbouring empty cell, if it has none then it is an inner fluid cell.
+ */
+bool SOR::isInnerFluidCell(int i, int j)
+{
+    // check if cell has any neighbouring empty cell, if it has none then it is an inner fluid cell
+    // watch out for boundary cells
+    // return true if the current cell is a fluid cell and does not have any empty cell or any boundaries as neighbour
+    bool isInnerFluidCell = false;
+    if (discretization_->markerfield(i, j) == 1)
+    {
+        if (discretization_->markerfield(i - 1, j) == 1 && discretization_->markerfield(i + 1, j) == 1 && discretization_->markerfield(i, j - 1) == 1 && discretization_->markerfield(i, j + 1) == 1)
+        {
+            isInnerFluidCell = true;
+        }
+    }
+    return isInnerFluidCell;
 }

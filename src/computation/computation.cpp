@@ -81,10 +81,10 @@ void Computation::runSimulation()
 
     std::cout << "generated particles" << std::endl;
 
+    updateMarkerField();
+
     outputWriterParaview_->writeFile(t); // output simulation results
     outputWriterText_->writeFile(t);
-
-    updateMarkerField();
 
     while (t < settings_.endTime)
     {
@@ -98,27 +98,46 @@ void Computation::runSimulation()
         t += dt_;
 
         std::cout << "t = " << t  << std::endl; // print time and time step width to the console
+
         printParticles();
 
         // only compute preliminary velocities and rhs and solve pressure eq. on inner fluid cells
         
         computePreliminaryVelocities(); // compute preliminary velocities, F and G
 
+        // std::cout << "computed preliminary velocities" << std::endl;
+
         computeRightHandSide(); // compute rhs of the Poisson equation for the pressure
+
+        // std::cout << "computed right hand side" << std::endl;
 
         computePressure(); // solve the Poisson equation for the pressure
 
+        // std::cout << "computed pressure" << std::endl;
+
         computeVelocities(); // compute the new velocities, u,v, from the preliminary velocities, F,G and the pressure, p
 
+        // std::cout << "computed velocities" << std::endl;
+
         freeflowBC(); // apply free flow boundary conditions
+
+        // std::cout << "applied free flow boundary conditions" << std::endl;
 
         applyBoundaryValues(); // set boundary values for u, v, F and G
 
+        // std::cout << "applied boundary values" << std::endl;
+
         computeParticleVelocities();
+
+        // std::cout << "computed particle velocities" << std::endl;
 
         updateMarkerField();
 
+        // std::cout << "updated marker field" << std::endl;
+
         freeflowBC(); // apply free flow boundary conditions
+
+        // std::cout << "applied free flow boundary conditions" << std::endl;
 
         outputWriterParaview_->writeFile(t); // output simulation results
         outputWriterText_->writeFile(t);
@@ -128,6 +147,8 @@ void Computation::runSimulation()
             std::cout << "t = " << t << ", dt = " << dt_ << std::endl; // print time and time step width to the console
             timestepInterval += settings_.endTime / numberOfPrints;
         }
+
+        // std::cout << "wrote file" << std::endl;
     }
 }
 
@@ -396,7 +417,19 @@ void Computation::generateVirtualParticles()
     // }
     if (settings_.particleShape == "DAM")
     {
-        generateDam(20);
+        generateDam(5);
+    }
+    else if (settings_.particleShape == "DROP")
+    {
+        std::vector<double> particlesX;
+        std::vector<double> particlesY;
+        // position not in indices!
+        particlesY = {1.0, 1.0, 1.0, 1.0, 1.0};	
+        particlesX = {1.0, 1.0, 1.0, 1.0, 1.0};	
+        for (int i = 0; i < particlesX.size(); ++i)                                                                                             
+        {                                                                                                                           
+            particles_.push_back(Particle(particlesX[i], particlesY[i]));                                                          
+        }
     }
     else
     {
@@ -411,22 +444,21 @@ void Computation::generateVirtualParticles()
     }
 }
 
-void Computation::generateDam(int noParticles)
+void Computation::generateDam(int particlesPerCell)
 {
-    // Distribute the noParticles equally in a box in the left lower corner of the domain
+    // Distribute the particlesPerCell equally in a box in the left lower corner of the domain
     double dx = discretization_->dx();
     double dy = discretization_->dy();
 
-    // particlesX_ = {};
-    // particlesY_ = {};
-
-    for (int i=0; i<int(settings_.nCells[1]/ 4-1); i++)
+    for (int i=0; i<int(settings_.nCells[0]/ 4); i++)
     {
-        for (int j=0; j<int(settings_.nCells[1]-1); j++)
+        for (int j=0; j<int(settings_.nCells[1]/2); j++)
         {
-            // particlesX_.push_back(i*dx);
-            // particlesY_.push_back(j*dy);
-            particles_.push_back(Particle(i*dx, j*dy));
+            for (int k=0; k<particlesPerCell; k++)
+            {
+                particles_.push_back(Particle(i*dx + k*dx/particlesPerCell, j*dy + k*dy/particlesPerCell));
+            }
+            // particles_.push_back(Particle(i*dx, j*dy));
         }
     }
 }
@@ -455,11 +487,32 @@ void Computation::computeParticleVelocities()
         double y1 = (jUpperRight - 1) * dy - dy / 2;
         double y2 = jUpperRight * dy - dy / 2;
 
-        // bilinear interpolation
-        double u = 1 / (dx * dy) * ((x2 - particles_[k].x) * (y2 - particles_[k].y) * discretization_->u(iUpperRight - 1, jUpperRight - 1) 
+        // std::cout << "iUpperRight = " << iUpperRight << " jUpperRight = " << jUpperRight << std::endl;
+        // std::cout << "x1 = " << x1 << " x2 = " << x2 << " y1 = " << y1 << " y2 = " << y2 << std::endl;
+
+        // only interpolate if the particle is not on the boundary (i.e. the upper right corner is not the last grid point in x or y direction)
+        if (iUpperRight > discretization_->uIBegin() && iUpperRight < discretization_->uIEnd() && jUpperRight > discretization_->uJBegin() && jUpperRight < discretization_->uJEnd())
+        {
+            // bilinear interpolation
+            double u = 1 / (dx * dy) * ((x2 - particles_[k].x) * (y2 - particles_[k].y) * discretization_->u(iUpperRight - 1, jUpperRight - 1) 
                                     + (particles_[k].x - x1) * (y2 - particles_[k].y) * discretization_->u(iUpperRight, jUpperRight - 1) 
                                     + (x2 - particles_[k].x) * (particles_[k].y - y1) * discretization_->u(iUpperRight - 1, jUpperRight) 
                                     + (particles_[k].x - x1) * (particles_[k].y - y1) * discretization_->u(iUpperRight, jUpperRight));
+
+            // move particle
+            particles_[k].x += dt_ * u;
+        }
+        // else remove particle from system -> only makes sense if outflow BC
+        else 
+        {
+            // particles_.erase(particles_.begin() + k);
+            double u = 0.0;
+
+            // move particle
+            particles_[k].x += dt_ * u;
+        }
+
+        
 
         // compute particle velocity in y direction
         // index of upper right corner
@@ -472,16 +525,28 @@ void Computation::computeParticleVelocities()
         y1 = (jUpperRight - 1) * dy;
         y2 = jUpperRight * dy;
 
-        // bilinear interpolation
-        double v = 1 / (dx * dy) * ((x2 - particles_[k].x) * (y2 - particles_[k].y) * discretization_->v(iUpperRight - 1, jUpperRight - 1) 
-                                    + (particles_[k].x - x1) * (y2 - particles_[k].y) * discretization_->v(iUpperRight, jUpperRight - 1) 
-                                    + (x2 - particles_[k].x) * (particles_[k].y - y1) * discretization_->v(iUpperRight - 1, jUpperRight) 
-                                    + (particles_[k].x - x1) * (particles_[k].y - y1) * discretization_->v(iUpperRight, jUpperRight));
+        if (iUpperRight > discretization_->uIBegin() && iUpperRight < discretization_->uIEnd() && jUpperRight > discretization_->uJBegin() && jUpperRight < discretization_->uJEnd())
+        {
+            // bilinear interpolation
+            double v = 1 / (dx * dy) * ((x2 - particles_[k].x) * (y2 - particles_[k].y) * discretization_->v(iUpperRight - 1, jUpperRight - 1) 
+                                        + (particles_[k].x - x1) * (y2 - particles_[k].y) * discretization_->v(iUpperRight, jUpperRight - 1) 
+                                        + (x2 - particles_[k].x) * (particles_[k].y - y1) * discretization_->v(iUpperRight - 1, jUpperRight) 
+                                        + (particles_[k].x - x1) * (particles_[k].y - y1) * discretization_->v(iUpperRight, jUpperRight));
 
+            // move particle
+            particles_[k].y += dt_ * v;
 
-        // move particle
-        particles_[k].x += dt_ * u;
-        particles_[k].y += dt_ * v;
+        }
+        else 
+        {
+            // particles_.erase(particles_.begin() + k);         // remove particle from system -> only makes sense if outflow BC
+            double v = 0.0;
+
+            // move particle
+            particles_[k].y += dt_ * v;
+        }
+
+        
     }
 }
 
@@ -498,7 +563,7 @@ void Computation::updateMarkerField()
             discretization_->markerfield(i, j) = 0; // assume cell is empty
             for (int k = 0; k < particles_.size(); k++)
             {
-                if (particles_[k].x == i && particles_[k].y == j)
+                if (int(particles_[k].x / discretization_->dx() + 1) == i && int(particles_[k].y / discretization_->dy() + 1) == j)
                 {
                     discretization_->markerfield(i, j) = 1; // fluid cell
                     break;

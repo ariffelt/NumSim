@@ -14,8 +14,9 @@ public:
     //! solve the system of the Poisson equation for pressure
     void solve();
 
+    bool isInnerFluidCell(int i, int j);
+
 private:
     double omega_;
 
-    Computation computation_;
 };
