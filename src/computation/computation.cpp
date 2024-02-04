@@ -50,9 +50,30 @@ void Computation::initialize(int argc, char *argv[])
         exit(1);
     }
 
+    // set markers for the fixed boundary conditions
+    setBoundaryMarkers();
+
     // initialize output writers
     outputWriterText_ = std::make_unique<OutputWriterText>(discretization_);
     outputWriterParaview_ = std::make_unique<OutputWriterParaview>(discretization_);
+}
+
+/**
+ * Set fixed boundary conditions markers to 2
+ */
+void Computation::setBoundaryMarkers()
+{
+    // set markers for the fixed boundary conditions
+    for (int i = 0; i < discretization_->markerfieldSize()[0]; i++)
+    {
+        for (int j = 0; j < discretization_->markerfieldSize()[1]; j++)
+        {
+            if (i == 0 || i == discretization_->markerfieldSize()[0] - 1 || j == 0 || j == discretization_->markerfieldSize()[1] - 1)
+            {
+                discretization_->markerfield(i, j) = 2;
+            }
+        }
+    }
 }
 
 /**
@@ -79,7 +100,7 @@ void Computation::runSimulation()
 
     updateMarkerField();
 
-    outputWriterParaview_->writeFile(t); // output simulation results
+    outputWriterParaview_->writeFile(t); // output initial state
     outputWriterText_->writeFile(t);
 
     // std::cout << "updated marker field" << std::endl;
@@ -100,15 +121,15 @@ void Computation::runSimulation()
         // only compute preliminary velocities and rhs and solve pressure eq. on inner fluid cells
         
         computePreliminaryVelocities(); // compute preliminary velocities, F and G
-
+        
         computeRightHandSide(); // compute rhs of the Poisson equation for the pressure
-
+        
         computePressure(); // solve the Poisson equation for the pressure
-
+        
         computeVelocities(); // compute the new velocities, u,v, from the preliminary velocities, F,G and the pressure, p
-
+        
         freeflowBC(); // apply free flow boundary conditions
-
+        
         applyBoundaryValues(); // set boundary values for u, v, F and G
 
         computeParticleVelocities();
@@ -173,12 +194,12 @@ void Computation::applyBoundaryValues()
     // set u boundary values for bottom and top first, as for corner cases, the left and right border should be used
     for (int i = discretization_->uIBegin(); i < discretization_->uIEnd(); i++)
     {
-        if (discretization_->markerfield(i,discretization_->uJBegin()) == 1)
+        //if (discretization_->markerfield(i,discretization_->uJBegin()) == 1)
         {
             // u boundary values bottom, assuming inhomogenous Dirichlet conditions
             discretization_->u(i, discretization_->uJBegin()) = 2.0 * settings_.dirichletBcBottom[0] - discretization_->u(i, discretization_->uJBegin() + 1);
         }
-        if (discretization_->markerfield(i,discretization_->uJEnd()) == 1)
+        //if (discretization_->markerfield(i,discretization_->uJEnd()) == 1)
         {
             // u boundary values top, assuming inhomogenous Dirichlet conditions
             discretization_->u(i, discretization_->uJEnd()) = 2.0 * settings_.dirichletBcTop[0] - discretization_->u(i, discretization_->uJEnd() - 1);
@@ -188,12 +209,12 @@ void Computation::applyBoundaryValues()
     // set u boundary values for left and right side
     for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd(); j++)
     {
-        if (discretization_->markerfield(discretization_->uIBegin(),j) == 1)
+        //if (discretization_->markerfield(discretization_->uIBegin(),j) == 1)
         {
             // u boundary values left, assuming inhomogenous Dirichlet conditions
             discretization_->u(discretization_->uIBegin(), j) = settings_.dirichletBcLeft[0];
         }
-        if (discretization_->markerfield(discretization_->uIEnd() - 1,j) == 1)
+        //if (discretization_->markerfield(discretization_->uIEnd() - 1,j) == 1)
         {
             // u boundary values right, assuming inhomogenous Dirichlet conditions
             discretization_->u(discretization_->uIEnd() - 1, j) = settings_.dirichletBcRight[0];
@@ -218,12 +239,12 @@ void Computation::applyBoundaryValues()
     // set v boundary values for left and right side
     for (int j = discretization_->vJBegin(); j < discretization_->vJEnd(); j++)
     {
-        if (discretization_->markerfield(discretization_->vIBegin(),j) == 1)
+        //if (discretization_->markerfield(discretization_->vIBegin(),j) == 1)
         {
             // v boundary values left, assuming inhomogenous Dirichlet conditions
             discretization_->v(discretization_->vIBegin(), j) = 2 * settings_.dirichletBcLeft[1] - discretization_->v(discretization_->vIBegin() + 1, j);
         }
-        if (discretization_->markerfield(discretization_->vIEnd(),j) == 1)
+        //if (discretization_->markerfield(discretization_->vIEnd(),j) == 1)
         {
             // v boundary values right, assuming inhomogenous Dirichlet conditions
             discretization_->v(discretization_->vIEnd(), j) = 2 * settings_.dirichletBcRight[1] - discretization_->v(discretization_->vIEnd() - 1, j);
@@ -233,12 +254,12 @@ void Computation::applyBoundaryValues()
     // set F boundary values for bottom and top first, as for corner cases, the left and right border should be used
     for (int i = discretization_->uIBegin(); i < discretization_->uIEnd(); i++)
     {
-        if (discretization_->markerfield(i,discretization_->uJBegin()) == 1)
+        //if (discretization_->markerfield(i,discretization_->uJBegin()) == 1)
         {
             // F boundary values bottom
             discretization_->f(i, discretization_->uJBegin()) = discretization_->u(i, discretization_->uJBegin());
         }
-        if (discretization_->markerfield(i,discretization_->uJEnd()) == 1)
+        //if (discretization_->markerfield(i,discretization_->uJEnd()) == 1)
         {
             // F boundary values top
             discretization_->f(i, discretization_->uJEnd()) = discretization_->u(i, discretization_->uJEnd());
@@ -248,12 +269,12 @@ void Computation::applyBoundaryValues()
     // set F boundary values for left and right side
     for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd(); j++)
     {
-        if (discretization_->markerfield(discretization_->uIBegin(),j) == 1)
+        //if (discretization_->markerfield(discretization_->uIBegin(),j) == 1)
         {
             // F boundary values left
             discretization_->f(discretization_->uIBegin(), j) = discretization_->u(discretization_->uIBegin(), j);
         }
-        if (discretization_->markerfield(discretization_->uIEnd() - 1,j) == 1)
+        //if (discretization_->markerfield(discretization_->uIEnd() - 1,j) == 1)
         {
             // F boundary values right
             discretization_->f(discretization_->uIEnd() - 1, j) = discretization_->u(discretization_->uIEnd() - 1, j);
@@ -263,12 +284,12 @@ void Computation::applyBoundaryValues()
     // set G boundary values for bottom and top first, as for corner cases, the left and right border should be used
     for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); i++)
     {
-        if (discretization_->markerfield(i,discretization_->vJBegin()) == 1)
+        //if (discretization_->markerfield(i,discretization_->vJBegin()) == 1)
         {
             // G boundary values bottom
             discretization_->g(i, discretization_->vJBegin()) = discretization_->v(i, discretization_->vJBegin());
         }
-        if (discretization_->markerfield(i,discretization_->vJEnd() - 1) == 1)
+        //if (discretization_->markerfield(i,discretization_->vJEnd() - 1) == 1)
         {
             // G boundary values top
             discretization_->g(i, discretization_->vJEnd() - 1) = discretization_->v(i, discretization_->vJEnd() - 1);
@@ -278,12 +299,12 @@ void Computation::applyBoundaryValues()
     // set G boundary values for left and right side
     for (int j = discretization_->vJBegin(); j < discretization_->vJEnd(); j++)
     {
-        if (discretization_->markerfield(discretization_->vIBegin(),j) == 1)
+        //if (discretization_->markerfield(discretization_->vIBegin(),j) == 1)
         {
             // G boundary values left
             discretization_->g(discretization_->vIBegin(), j) = discretization_->v(discretization_->vIBegin(), j);
         }
-        if (discretization_->markerfield(discretization_->vIEnd(),j) == 1)
+        //if (discretization_->markerfield(discretization_->vIEnd(),j) == 1)
         {
             // G boundary values right
             discretization_->g(discretization_->vIEnd(), j) = discretization_->v(discretization_->vIEnd(), j);
@@ -302,7 +323,7 @@ void Computation::computePreliminaryVelocities()
     {
         for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd(); j++)
         {
-            if (isInnerFluidCell(i,j))
+            if (discretization_->isInnerFluidCell(i,j))
             {
                 double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2uDx2(i, j) + discretization_->computeD2uDy2(i, j));
                 double convectionTerms = discretization_->computeDu2Dx(i, j) + discretization_->computeDuvDy(i, j);
@@ -317,7 +338,7 @@ void Computation::computePreliminaryVelocities()
     {
         for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1; j++)
         {
-            if (isInnerFluidCell(i,j))
+            if (discretization_->isInnerFluidCell(i,j))
             {
                 double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2vDx2(i, j) + discretization_->computeD2vDy2(i, j));
                 double convectionTerms = discretization_->computeDuvDx(i, j) + discretization_->computeDv2Dy(i, j);
@@ -337,7 +358,7 @@ void Computation::computeRightHandSide()
     {
         for (int j = 1; j < discretization_->rhsSize()[1] - 1; j++)
         {
-            if (isInnerFluidCell(i,j))
+            if (discretization_->isInnerFluidCell(i,j))
             {
                 double change_F = ((discretization_->f(i, j) - discretization_->f(i - 1, j)) / discretization_->dx());
                 double change_G = ((discretization_->g(i, j) - discretization_->g(i, j - 1)) / discretization_->dy());
@@ -366,7 +387,7 @@ void Computation::computeVelocities()
     {
         for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd(); j++)
         {
-            if (isInnerFluidCell(i, j))
+            if (discretization_->isInnerFluidCell(i,j))
             {
                 discretization_->u(i, j) = discretization_->f(i, j) - dt_ * (discretization_->p(i + 1, j) - discretization_->p(i, j)) / discretization_->dx();
             }
@@ -378,7 +399,7 @@ void Computation::computeVelocities()
     {
         for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1; j++)
         {
-            if (isInnerFluidCell(i, j))
+            if (discretization_->isInnerFluidCell(i,j))
             {
                 discretization_->v(i, j) = discretization_->g(i, j) - dt_ * (discretization_->p(i, j + 1) - discretization_->p(i, j)) / discretization_->dy();
             }
@@ -398,6 +419,18 @@ void Computation::generateVirtualParticles()
     {
         generateDam(20);
     }
+    else if (settings_.particelShape == "FULL")
+    {
+        generateFull(20);
+    }
+    else if (settings_.particelShape == "BOX")
+    {
+        generateBox(20);
+    }
+    else if (settings_.particelShape == "DROP")
+    {
+        generateDrop(1);
+    }
     else
     {
     particlesX_ = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0,1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1,1.1,1.1};	
@@ -414,9 +447,61 @@ void Computation::generateDam(int noParticles)
     particlesX_ = {};
     particlesY_ = {};
 
-    for (int i=0; i<int(settings_.nCells[1]/ 4-1); i++)
+    for (int i=0; i<int(settings_.nCells[1]/4); i++)
     {
-        for (int j=0; j<int(settings_.nCells[1]-1); j++)
+        for (int j=0; j<int(settings_.nCells[1]); j++)
+        {
+            particlesX_.push_back(i*dx);
+            particlesY_.push_back(j*dy);
+        }
+    }
+}
+
+void Computation::generateBox(int noParticles)
+{
+    // Generate a box in the middle of the domain
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
+
+    particlesX_ = {};
+    particlesY_ = {};
+
+    for (int i=0; i<int(settings_.nCells[1]); i++)
+    {
+        for (int j=0; j<int(settings_.nCells[1]); j++)
+        {
+            if (i > int(settings_.nCells[1])/4 && i < 3*int(settings_.nCells[1])/4 && j > int(settings_.nCells[1])/4 && j < 3*int(settings_.nCells[1])/4)
+            {
+                particlesX_.push_back(i*dx);
+                particlesY_.push_back(j*dy);
+            }
+        }
+    
+}
+}
+
+void Computation::generateDrop(int noParticles)
+{
+    // Generate a single particle in the middle of the domain
+    particlesX_ = {};
+    particlesY_ = {};
+
+    particlesX_.push_back(settings_.nCells[0]/ 2 * discretization_->dx()+discretization_->dx()/2);
+    particlesY_.push_back(settings_.nCells[1]/ 2 * discretization_->dy()+discretization_->dy()/2);
+}
+
+void Computation::generateFull(int noParticles)
+{
+    // Distribute the noParticles equally in a box in the left lower corner of the domain
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
+
+    particlesX_ = {};
+    particlesY_ = {};
+
+    for (int i=0; i<int(settings_.nCells[1]); i++)
+    {
+        for (int j=0; j<int(settings_.nCells[1]); j++)
         {
             particlesX_.push_back(i*dx);
             particlesY_.push_back(j*dy);
@@ -491,8 +576,12 @@ void Computation::updateMarkerField()
     for (int i = 0; i < discretization_->markerfieldSize()[0]; i++)
     {
         for (int j = 0; j < discretization_->markerfieldSize()[1]; j++)
-        {
-            discretization_->markerfield(i, j) = 0; // assume cell is empty
+        {   
+            // check if it is a fixed boundary cell
+            if (!discretization_->markerfield(i, j) == 2)
+            {   
+                discretization_->markerfield(i, j) = 0; // assume cell is empty
+            }
         }
     }
 
@@ -501,27 +590,7 @@ void Computation::updateMarkerField()
         int i = int(particlesX_[k] / discretization_->dx() + 1);
         int j = int(particlesY_[k] / discretization_->dy() + 1);
         discretization_->markerfield(i, j) = 1; // assume cell is fluid    
-        std::cout << "i = " << i << " j = " << j << std::endl;
     }
-}
-
-/**
- * Check if cell has any neighbouring empty cell, if it has none then it is an inner fluid cell.
- */
-bool Computation::isInnerFluidCell(int i, int j)
-{
-    // check if cell has any neighbouring empty cell, if it has none then it is an inner fluid cell
-    // watch out for boundary cells
-    // return true if the current cell is a fluid cell and does not have any empty cell or any boundaries as neighbour
-    bool isInnerFluidCell = false;
-    if (discretization_->markerfield(i, j) == 1)
-    {
-        if (discretization_->markerfield(i - 1, j) == 1 && discretization_->markerfield(i + 1, j) == 1 && discretization_->markerfield(i, j - 1) == 1 && discretization_->markerfield(i, j + 1) == 1)
-        {
-            isInnerFluidCell = true;
-        }
-    }
-    return isInnerFluidCell;
 }
 
 /**
@@ -532,11 +601,12 @@ void Computation::freeflowBC()
     // for loops over all p cells
     // check if cell is fluid cell
     // check if it has 
-    for (int i = 1; i < discretization_->pSize()[0] - 1; i++)
+    for (int i = 1; i <= discretization_->pSize()[0] - 1; i++)
+
     {
-        for (int j = 1; j < discretization_->pSize()[1] - 1; j++)
+        for (int j = 1; j <= discretization_->pSize()[1] - 1; j++)
         {
-            if (!isInnerFluidCell(i,j) && discretization_->markerfield(i, j) == 1)
+            if (!discretization_->isInnerFluidCell(i,j) && discretization_->markerfield(i, j) == 1)
             {
                 // check if the right, top, left or bottom cell is a fluid cell
                 if (discretization_->markerfield(i + 1, j) == 1)
@@ -671,13 +741,17 @@ void Computation::freeflowBC()
             }
         }
     }
+
+    std::cout << std::endl;
 }
 
 /**
  * compute the boundary conditions for the bottom wall
  */
 void Computation::bottomWallBC(int i, int j)
-{
+{   
+    std::cout << "bottom wall ( "<<i<<", "<<j<<"); ";
+
     // mass balance
     discretization_->v(i,j-1) = discretization_->v(i,j) + discretization_->dy() / discretization_->dx() * (discretization_->u(i,j) - discretization_->u(i-1,j));
 
@@ -693,6 +767,8 @@ void Computation::bottomWallBC(int i, int j)
  */
 void Computation::leftWallBC(int i, int j)
 {
+    std::cout << "left wall ( "<<i<<", "<<j<<"); ";
+    
     // mass balance
     discretization_->u(i-1,j) = discretization_->u(i,j) + discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
 
@@ -708,6 +784,8 @@ void Computation::leftWallBC(int i, int j)
  */
 void Computation::bottomLeftCornerBC(int i, int j)
 {
+    std::cout << "bottom left corner ( "<<i<<", "<<j<<"); ";
+
     // mass balance + tangential stress
     discretization_->u(i-1,j) = discretization_->u(i,j);
     discretization_->v(i,j-1) = discretization_->v(i,j);
@@ -723,6 +801,8 @@ void Computation::bottomLeftCornerBC(int i, int j)
  */
 void Computation::topWallBC(int i, int j)
 {
+
+    std::cout << "top wall ( "<<i<<", "<<j<<"); ";
     // mass balance
     discretization_->v(i,j) = discretization_->v(i,j-1) - discretization_->dy() / discretization_->dx() * (discretization_->u(i,j) - discretization_->u(i-1,j));
 
@@ -738,6 +818,8 @@ void Computation::topWallBC(int i, int j)
  */
 void Computation::horizontalPipeBC(int i, int j)
 {
+
+    std::cout << "horizontal pipe ( "<<i<<", "<<j<<"); ";
     // external forces
     discretization_->v(i,j) = discretization_->v(i,j) + dt_ * settings_.g[1];
     discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
@@ -755,6 +837,8 @@ void Computation::horizontalPipeBC(int i, int j)
  */
 void Computation::topLeftCornerBC(int i, int j)
 {
+
+    std::cout << "top left corner ( "<<i<<", "<<j<<"); ";
     // mass balance + tangential stress
     discretization_->v(i,j) = discretization_->v(i,j-1);
     discretization_->u(i,j) = discretization_->u(i-1,j);
@@ -773,6 +857,8 @@ void Computation::topLeftCornerBC(int i, int j)
  */
 void Computation::tipFromRightBC(int i, int j)
 {
+
+    std::cout << "tip from right ( "<<i<<", "<<j<<"); ";
     // external forces
     discretization_->v(i,j) = discretization_->v(i,j) + dt_ * settings_.g[1];
     discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
@@ -795,6 +881,8 @@ void Computation::tipFromRightBC(int i, int j)
  */
 void Computation::rightWallBC(int i, int j)
 {
+
+    std::cout << "right wall ( "<<i<<", "<<j<<"); ";
     // mass balance
     discretization_->u(i,j) = discretization_->u(i-1,j) - discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
 
@@ -810,6 +898,8 @@ void Computation::rightWallBC(int i, int j)
  */
 void Computation::bottomRightCornerBC(int i, int j)
 {
+
+    std::cout << "bottom right corner ( "<<i<<", "<<j<<"); ";
     // mass balance + tangential stress
     discretization_->u(i,j) = discretization_->u(i-1,j);
     discretization_->v(i,j-1) = discretization_->v(i,j);
@@ -828,6 +918,8 @@ void Computation::bottomRightCornerBC(int i, int j)
  */
 void Computation::verticalPipeBC(int i, int j)
 {
+
+    std::cout << "vertical pipe ( "<<i<<", "<<j<<"); ";
     // external forces
     discretization_->u(i,j) = discretization_->u(i,j) + dt_ * settings_.g[0];
     discretization_->u(i-1,j) = discretization_->u(i-1,j) + dt_ * settings_.g[0];
@@ -846,6 +938,8 @@ void Computation::verticalPipeBC(int i, int j)
  */
 void Computation::tipFromTopBC(int i, int j)
 {
+
+    std::cout << "tip from top ( "<<i<<", "<<j<<"); ";
     // external forces
     discretization_->u(i,j) = discretization_->u(i,j) + dt_ * settings_.g[0];
     discretization_->u(i-1,j) = discretization_->u(i-1,j) + dt_ * settings_.g[0];
@@ -868,6 +962,8 @@ void Computation::tipFromTopBC(int i, int j)
  */
 void Computation::topRightCornerBC(int i, int j)
 {
+
+    std::cout << "top right corner ( "<<i<<", "<<j<<"); ";
     // mass balance + tangential stress
     discretization_->u(i,j) = discretization_->u(i-1,j);
     discretization_->v(i,j) = discretization_->v(i,j-1);
@@ -887,6 +983,8 @@ void Computation::topRightCornerBC(int i, int j)
 */
 void Computation::tipFromLeftBC(int i, int j)
 {
+
+    std::cout << "tip from left ( "<<i<<", "<<j<<"); ";
     // external forces
     discretization_->v(i,j) = discretization_->v(i,j) + dt_ * settings_.g[1];
     discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
@@ -913,6 +1011,8 @@ void Computation::tipFromLeftBC(int i, int j)
 */
 void Computation::tipFromBottomBC(int i, int j)
 {
+
+    std::cout << "tip from bottom ( "<<i<<", "<<j<<"); ";
     // external forces
     discretization_->u(i,j) = discretization_->u(i,j) + dt_ * settings_.g[0];
     discretization_->u(i-1,j) = discretization_->u(i-1,j) + dt_ * settings_.g[0];
@@ -939,6 +1039,8 @@ void Computation::tipFromBottomBC(int i, int j)
 */
 void Computation::dropBC(int i, int j)
 {
+
+    std::cout << "drop ( "<<i<<", "<<j<<"); ";
     // external forces
     discretization_->u(i,j) = discretization_->u(i,j) + dt_ * settings_.g[0];
     discretization_->u(i-1,j) = discretization_->u(i-1,j) + dt_ * settings_.g[0];

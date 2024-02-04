@@ -31,12 +31,15 @@ double PressureSolver::getResidual()
     {
         for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd(); j++)
         {
-            // second order derivative of p in direction x
-            double d2pdx2 = (discretization_->p(i - 1, j) - 2.0 * discretization_->p(i, j) + discretization_->p(i + 1, j)) / (hx2);
-            // second order derivative of p in direction y
-            double d2pdy2 = (discretization_->p(i, j - 1) - 2.0 * discretization_->p(i, j) + discretization_->p(i, j + 1)) / (hy2);
-            // compute squared residual
-            res += (d2pdx2 + d2pdy2 - discretization_->rhs(i, j)) * (d2pdx2 + d2pdy2 - discretization_->rhs(i, j));
+            if (discretization_->isInnerFluidCell(i,j))
+            {
+                // second order derivative of p in direction x
+                double d2pdx2 = (discretization_->p(i - 1, j) - 2.0 * discretization_->p(i, j) + discretization_->p(i + 1, j)) / (hx2);
+                // second order derivative of p in direction y
+                double d2pdy2 = (discretization_->p(i, j - 1) - 2.0 * discretization_->p(i, j) + discretization_->p(i, j + 1)) / (hy2);
+                // compute squared residual
+                res += (d2pdx2 + d2pdy2 - discretization_->rhs(i, j)) * (d2pdx2 + d2pdy2 - discretization_->rhs(i, j));
+            }
         }
     }
 
@@ -50,12 +53,19 @@ void PressureSolver::setBoundaryValues()
 {
     for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); i++)
     {
-        discretization_->p(i, discretization_->pJEnd()) = discretization_->p(i, discretization_->pJEnd() - 1);
-        discretization_->p(i, discretization_->pJBegin()) = discretization_->p(i, discretization_->pJBegin() + 1);
+        if(discretization_->isInnerFluidCell(i,discretization_->pJBegin()))
+        {
+             discretization_->p(i, discretization_->pJEnd()) = discretization_->p(i, discretization_->pJEnd() - 1);
+            discretization_->p(i, discretization_->pJBegin()) = discretization_->p(i, discretization_->pJBegin() + 1);
+        }
+       
     }
     for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); j++)
     {
-        discretization_->p(discretization_->pIEnd(), j) = discretization_->p(discretization_->pIEnd() - 1, j);
-        discretization_->p(discretization_->pIBegin(), j) = discretization_->p(discretization_->pIBegin() + 1, j);
+        if(discretization_->isInnerFluidCell(discretization_->pIBegin(),j))
+        {
+            discretization_->p(discretization_->pIEnd(), j) = discretization_->p(discretization_->pIEnd() - 1, j);
+            discretization_->p(discretization_->pIBegin(), j) = discretization_->p(discretization_->pIBegin() + 1, j);
+        }
     }
 }

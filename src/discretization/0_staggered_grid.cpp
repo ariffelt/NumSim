@@ -335,3 +335,22 @@ std::array<int, 2> StaggeredGrid::rhsSize() const
 {
     return {nCells_[0] + 2, nCells_[1] + 2};
 }
+
+/**
+ * Check if cell has any neighbouring empty cell, if it has none then it is an inner fluid cell.
+ */
+bool StaggeredGrid::isInnerFluidCell(int i, int j)
+{
+    // check if cell has any neighbouring empty cell, if it has none then it is an inner fluid cell
+    // watch out for boundary cells
+    // return true if the current cell is a fluid cell and does not have any empty cell or any boundaries as neighbour
+    bool isInnerFluidCell = false;
+    if (markerfield(i, j) == 1)
+    {
+        if (markerfield(i - 1, j) >= 1 && markerfield(i + 1, j) >= 1 && markerfield(i, j - 1) >= 1 && markerfield(i, j + 1) >= 1)
+        {
+            isInnerFluidCell = true;
+        }
+    }
+    return isInnerFluidCell;
+}

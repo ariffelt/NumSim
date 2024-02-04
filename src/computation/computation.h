@@ -21,8 +21,8 @@ public:
 
     //! test the implementation of boundary conditions
     void testBC();
-
-    bool isInnerFluidCell(int i, int j);
+    //! set the boundary markers for the cells
+    void setBoundaryMarkers();
 
 private:
     //! compute the time step width dt from maximum velocities
@@ -48,6 +48,12 @@ private:
     void computeParticleVelocities();
 
     void generateDam(int noParticles);
+
+    void generateFull(int noParticles);
+
+    void generateBox(int noParticles);
+
+    void generateDrop(int noParticles);
 
     // void updateCellTypes();
 

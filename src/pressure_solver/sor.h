@@ -3,7 +3,6 @@
 #include <memory>
 
 #include "pressure_solver/pressure_solver.h"
-#include "computation/computation.h"
 
 class SOR : public PressureSolver
 {
@@ -16,6 +15,4 @@ public:
 
 private:
     double omega_;
-
-    Computation computation_;
 };
