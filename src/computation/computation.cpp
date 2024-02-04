@@ -81,6 +81,9 @@ void Computation::runSimulation()
 
     std::cout << "generated particles" << std::endl;
 
+    outputWriterParaview_->writeFile(t); // output simulation results
+    outputWriterText_->writeFile(t);
+
     updateMarkerField();
 
     while (t < settings_.endTime)
@@ -94,6 +97,9 @@ void Computation::runSimulation()
         }
         t += dt_;
 
+        std::cout << "t = " << t  << std::endl; // print time and time step width to the console
+        printParticles();
+
         // only compute preliminary velocities and rhs and solve pressure eq. on inner fluid cells
         
         computePreliminaryVelocities(); // compute preliminary velocities, F and G
@@ -106,11 +112,13 @@ void Computation::runSimulation()
 
         freeflowBC(); // apply free flow boundary conditions
 
+        applyBoundaryValues(); // set boundary values for u, v, F and G
+
         computeParticleVelocities();
 
         updateMarkerField();
 
-        freeflowBC();
+        freeflowBC(); // apply free flow boundary conditions
 
         outputWriterParaview_->writeFile(t); // output simulation results
         outputWriterText_->writeFile(t);
@@ -190,12 +198,12 @@ void Computation::applyBoundaryValues()
     // set v boundary values for bottom and top first, as for corner cases, the left and right border should be used
     for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); i++)
     {
-        if (discretization_->markerfield(i,discretization_->vJBegin()) == 1)
+        if (discretization_->markerfield(i,discretization_->vJBegin()) == 1) // Todo: Len hats auskommentiert
         {
             // v boundary values bottom, assuming inhomogenous Dirichlet conditions
             discretization_->v(i, discretization_->vJBegin()) = settings_.dirichletBcBottom[1];
         }
-        if (discretization_->markerfield(i,discretization_->vJEnd() - 1) == 1)
+        if (discretization_->markerfield(i,discretization_->vJEnd() - 1) == 1) // Todo: Len hats auskommentiert
         {
             // v boundary values top, assuming inhomogenous Dirichlet conditions
             discretization_->v(i, discretization_->vJEnd() - 1) = settings_.dirichletBcTop[1];
@@ -381,14 +389,45 @@ void Computation::computeVelocities()
 void Computation::generateVirtualParticles()
 {
     // todo: remove hardcoding
-    int numParticles = 10;
-    // std::vector<Particle> particles_(numParticles);
-    for (int i = 0; i < numParticles; ++i)
+    // int numParticles = 10;
+    // for (int i = 0; i < numParticles; ++i)
+    // {
+    //     particles_.push_back(Particle(settings_.inlet[0], settings_.inlet[1]));
+    // }
+    if (settings_.particleShape == "DAM")
     {
-        std::cout << "i: " << i << std::endl;
-        // particles_[i] = Particle(settings_.inlet[0], settings_.inlet[1]);
-        particles_.push_back(Particle(settings_.inlet[0], settings_.inlet[1]));
-        std::cout << "particles_[i].x: " << particles_[i].x << std::endl;
+        generateDam(20);
+    }
+    else
+    {
+        std::vector<double> particlesX;
+        std::vector<double> particlesY;
+        particlesX = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0,1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1,1.1,1.1};	
+        particlesY = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0,1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1,1.1,1.1};	
+        for (int i = 0; i < particlesX.size(); ++i)                                                                                             
+        {                                                                                                                           
+            particles_.push_back(Particle(particlesX[i], particlesY[i]));                                                          
+        }
+    }
+}
+
+void Computation::generateDam(int noParticles)
+{
+    // Distribute the noParticles equally in a box in the left lower corner of the domain
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
+
+    // particlesX_ = {};
+    // particlesY_ = {};
+
+    for (int i=0; i<int(settings_.nCells[1]/ 4-1); i++)
+    {
+        for (int j=0; j<int(settings_.nCells[1]-1); j++)
+        {
+            // particlesX_.push_back(i*dx);
+            // particlesY_.push_back(j*dy);
+            particles_.push_back(Particle(i*dx, j*dy));
+        }
     }
 }
 
@@ -467,6 +506,14 @@ void Computation::updateMarkerField()
             }
         }
     }
+    // // allternative:
+    // for (int k = 0; k < particles_.size(); k++)
+    // {
+    //     int i = int(particles_[k].x / discretization_->dx() + 1);
+    //     int j = int(particles_[k].y / discretization_->dy() + 1);
+    //     discretization_->markerfield(i, j) = 1; // assume cell is fluid    
+    //     std::cout << "i = " << i << " j = " << j << std::endl;
+    // }
 }
 
 /**
@@ -488,6 +535,15 @@ bool Computation::isInnerFluidCell(int i, int j)
     return isInnerFluidCell;
 }
 
+
+void Computation::printParticles()
+{
+    for (int i = 0; i < particles_.size(); i++)
+    {
+        std::cout << "\t Particle " << i << " at position (" << particles_[i].x << ", " << particles_[i].y << ")" << std::endl;
+    }
+}
+
 /**
  * Apply free flow boundary conditions.
  */
@@ -500,7 +556,7 @@ void Computation::freeflowBC()
     {
         for (int j = 1; j < discretization_->pSize()[1] - 1; j++)
         {
-            if (!isInnerFluidCell(i,j))
+            if (!isInnerFluidCell(i,j) && discretization_->markerfield(i,j) == 1)
             {
                 // check if the right, top, left or bottom cell is a fluid cell
                 if (discretization_->markerfield(i + 1, j) == 1)
@@ -742,7 +798,7 @@ void Computation::tipFromRightBC(int i, int j)
     discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
 
     // mass balance
-    discretization_->u(i-1,j) = discretization_->u(i,j) + discretization_->dy() / discretization_->dx() * (discretization_->v(i,j) - discretization_->v(i,j-1));
+    discretization_->u(i-1,j) = discretization_->u(i,j) + discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
                                 
     // mass balance + tangential stress
     discretization_->v(i-1,j) = discretization_->v(i,j);

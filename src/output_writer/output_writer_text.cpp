@@ -32,6 +32,28 @@ void OutputWriterText::writeFile(double currentTime)
 
   const int fieldWidth = 9;   // number of characters to use for a single value
 
+  // write markers
+  // ---------
+  // write header lines
+  file << "markers (" << discretization_->p().size()[0] << "x" << discretization_->p().size()[1] << "): " << std::endl 
+    << std::string(fieldWidth, ' ') << "|";
+  for (int i = discretization_->markerfieldIBegin(); i < discretization_->markerfieldIEnd() + 1; i++)
+  {
+    file << std::setw(fieldWidth) << i;
+  }
+  file << std::endl << std::string(fieldWidth*(discretization_->p().size()[0]+2)+1, '-') << std::endl;
+
+  // write marker values
+  for (int j = discretization_->markerfieldJEnd(); j >= discretization_->markerfieldJBegin(); j--)
+  {
+    file << std::setw(fieldWidth) << j << "|";
+    for (int i = discretization_->markerfieldIBegin(); i < discretization_->markerfieldIEnd() + 1; i++)
+    {
+      file << std::setw(fieldWidth) << discretization_->markerfield(i,j);
+    }
+    file << std::endl;
+  }
+
   // write u
   // ---------
   // write header lines

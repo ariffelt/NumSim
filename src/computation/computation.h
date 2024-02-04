@@ -83,6 +83,10 @@ private:
 
     void dropBC(int i, int j);
 
+    void generateDam(int noParticles);
+
+    void printParticles();
+
     
 
 
