@@ -385,7 +385,10 @@ void Computation::generateVirtualParticles()
     // std::vector<Particle> particles_(numParticles);
     for (int i = 0; i < numParticles; ++i)
     {
-        particles_[i] = Particle(settings_.inlet[0], settings_.inlet[1]);
+        std::cout << "i: " << i << std::endl;
+        // particles_[i] = Particle(settings_.inlet[0], settings_.inlet[1]);
+        particles_.push_back(Particle(settings_.inlet[0], settings_.inlet[1]));
+        std::cout << "particles_[i].x: " << particles_[i].x << std::endl;
     }
 }
 

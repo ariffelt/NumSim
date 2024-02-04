@@ -7,17 +7,12 @@
 #include <iostream>
 #include <vector>
 
-// Define a struct for a particle
-struct Particle {
-    double x, y; // Position
+// Default constructor
+Particle::Particle() : x(0.0), y(0.0) {}
 
-    // Default constructor
-    Particle() : x(0.0), y(0.0) {}
-
-    // Constructor to initialize a particle
-    Particle(double initX, double initY)
-        : x(initX), y(initY) {}
-};
+// Constructor to initialize a particle
+Particle::Particle(double initX, double initY)
+    : x(initX), y(initY) {}
 
 // int main() {
 //     // Create an array of particles
