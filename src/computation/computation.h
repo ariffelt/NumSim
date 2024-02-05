@@ -122,4 +122,5 @@ private:
     std::vector<double> particlesY_;
 
     bool updateSurfacePs_ = false;
+    bool updateSurfaceVelocities_ = false;
 };
