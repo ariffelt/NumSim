@@ -137,15 +137,15 @@ void Computation::runSimulation()
 
         applyBoundaryValues(); // set boundary values for u, v, F and G
 
-        // std::cout << "vor updateParticleVelocities" << std::endl;
+        std::cout << "vor updateParticleVelocities" << std::endl;
 
         computeParticleVelocities();
 
-        // std::cout << "nach updateParticleVelocities" << std::endl;
+        std::cout << "nach updateParticleVelocities" << std::endl;
 
         updateMarkerField(); 
 
-        // std::cout << "nach updateMarkerfield" << std::endl;
+        std::cout << "nach updateMarkerfield" << std::endl;
 
         resetEmptyEdges();
 
@@ -481,7 +481,7 @@ void Computation::generateDam(int noParticles)
 
     for (int i=int(settings_.nCells[1]/4); i<int(3*settings_.nCells[1]/4); i++)
     {
-        for (int j=0; j<int(settings_.nCells[1]); j++)
+        for (int j=0; j<int(settings_.nCells[1]) - 3; j++)
         {
             for (int k=0; k<noParticles; k++)
             {
@@ -598,56 +598,59 @@ void Computation::generateDropInWater(int noParticles)
  */
 void Computation::computeParticleVelocities()
 {
-    // double dx = discretization_->dx();
-    // double dy = discretization_->dy();
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
 
     // interpolate velocities to the particle positions (do not coincide with velocity grid points)
     for (int k = 0; k < particlesX_.size(); k++)
     {
         // compute particle velocity in x direction
 
-        // // index of upper right corner
-        // int iUpperRight = int(particlesX_[k] / dx + 1);
-        // int jUpperRight = int((particlesY_[k] + 1 / 2) / dy + 1);
+        // index of upper right corner
+        int iUpperRight = int(particlesX_[k] / dx + 1);
+        int jUpperRight = int((particlesY_[k] + 1 / 2) / dy + 1);
 
-        // // position of 4 neighbouring grid points with values u
-        // double x1 = (iUpperRight - 1) * dx;
-        // double x2 = iUpperRight * dx;
-        // double y1 = (jUpperRight - 1) * dy - dy / 2;
-        // double y2 = jUpperRight * dy - dy / 2;
+        // position of 4 neighbouring grid points with values u
+        double x1 = (iUpperRight - 1) * dx;
+        double x2 = iUpperRight * dx;
+        double y1 = (jUpperRight - 1) * dy - dy / 2;
+        double y2 = jUpperRight * dy - dy / 2;
 
 
 
-        // // bilinear interpolation
-        // double u = 1 / (dx * dy) * ((x2 - particlesX_[k]) * (y2 - particlesY_[k]) * discretization_->u(iUpperRight - 1, jUpperRight - 1) 
-        //                             + (particlesX_[k] - x1) * (y2 - particlesY_[k]) * discretization_->u(iUpperRight, jUpperRight - 1) 
-        //                             + (x2 - particlesX_[k]) * (particlesY_[k] - y1) * discretization_->u(iUpperRight - 1, jUpperRight) 
-        //                             + (particlesX_[k] - x1) * (particlesY_[k] - y1) * discretization_->u(iUpperRight, jUpperRight));
+        // bilinear interpolation
+        double u = 1 / (dx * dy) * ((x2 - particlesX_[k]) * (y2 - particlesY_[k]) * discretization_->u(iUpperRight - 1, jUpperRight - 1) 
+                                    + (particlesX_[k] - x1) * (y2 - particlesY_[k]) * discretization_->u(iUpperRight, jUpperRight - 1) 
+                                    + (x2 - particlesX_[k]) * (particlesY_[k] - y1) * discretization_->u(iUpperRight - 1, jUpperRight) 
+                                    + (particlesX_[k] - x1) * (particlesY_[k] - y1) * discretization_->u(iUpperRight, jUpperRight));
 
-        // // compute particle velocity in y direction
-        // // index of upper right corner
-        // iUpperRight = int((particlesX_[k] + 1 / 2) / dx + 1);
-        // jUpperRight = int(particlesY_[k] / dy + 1);
+        // compute particle velocity in y direction
+        // index of upper right corner
+        iUpperRight = int((particlesX_[k] + 1 / 2) / dx + 1);
+        jUpperRight = int(particlesY_[k] / dy + 1);
 
-        // // position of 4 neighbouring grid points with values v
-        // x1 = (iUpperRight - 1) * dx - dx / 2;
-        // x2 = iUpperRight * dx - dx / 2;
-        // y1 = (jUpperRight - 1) * dy;
-        // y2 = jUpperRight * dy;
+        // position of 4 neighbouring grid points with values v
+        x1 = (iUpperRight - 1) * dx - dx / 2;
+        x2 = iUpperRight * dx - dx / 2;
+        y1 = (jUpperRight - 1) * dy;
+        y2 = jUpperRight * dy;
 
-        // // bilinear interpolation
-        // double v = 1 / (dx * dy) * ((x2 - particlesX_[k]) * (y2 - particlesY_[k]) * discretization_->v(iUpperRight - 1, jUpperRight - 1) 
-        //                             + (particlesX_[k] - x1) * (y2 - particlesY_[k]) * discretization_->v(iUpperRight, jUpperRight - 1) 
-        //                             + (x2 - particlesX_[k]) * (particlesY_[k] - y1) * discretization_->v(iUpperRight - 1, jUpperRight) 
-        //                             + (particlesX_[k] - x1) * (particlesY_[k] - y1) * discretization_->v(iUpperRight, jUpperRight));
+        // bilinear interpolation
+        double v = 1 / (dx * dy) * ((x2 - particlesX_[k]) * (y2 - particlesY_[k]) * discretization_->v(iUpperRight - 1, jUpperRight - 1) 
+                                    + (particlesX_[k] - x1) * (y2 - particlesY_[k]) * discretization_->v(iUpperRight, jUpperRight - 1) 
+                                    + (x2 - particlesX_[k]) * (particlesY_[k] - y1) * discretization_->v(iUpperRight - 1, jUpperRight) 
+                                    + (particlesX_[k] - x1) * (particlesY_[k] - y1) * discretization_->v(iUpperRight, jUpperRight));
 
 
         // move particle
-        particlesX_[k] += dt_ * discretization_->u().interpolateAt(particlesX_[k], particlesY_[k]);
-        particlesY_[k] += dt_ * discretization_->v().interpolateAt(particlesX_[k], particlesY_[k]);
+        // particlesX_[k] += dt_ * discretization_->u().interpolateAt(particlesX_[k], particlesY_[k]);
+        // particlesY_[k] += dt_ * discretization_->v().interpolateAt(particlesX_[k], particlesY_[k]);
+
+        particlesX_[k] += dt_ * u;
+        particlesY_[k] += dt_ * v;
     }
 
-    std::cout << "Particle velocities computed" << std::endl;
+    // std::cout << "Particle velocities computed" << std::endl;
 }
 
 /**
@@ -830,7 +833,7 @@ void Computation::freeflowBC()
  */
 void Computation::bottomWallBC(int i, int j)
 {   
-    std::cout << "bottom wall ( "<<i<<", "<<j<<"); ";
+    // std::cout << "bottom wall ( "<<i<<", "<<j<<"); ";
 
     // mass balance
     discretization_->v(i,j-1) = discretization_->v(i,j) + discretization_->dy() / discretization_->dx() * (discretization_->u(i,j) - discretization_->u(i-1,j));
@@ -853,7 +856,7 @@ void Computation::bottomWallBC(int i, int j)
  */
 void Computation::leftWallBC(int i, int j)
 {
-    std::cout << "left wall ( "<<i<<", "<<j<<"); ";
+    // std::cout << "left wall ( "<<i<<", "<<j<<"); ";
     
     // mass balance
     discretization_->u(i-1,j) = discretization_->u(i,j) + discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
@@ -877,7 +880,7 @@ void Computation::leftWallBC(int i, int j)
  */
 void Computation::bottomLeftCornerBC(int i, int j)
 {
-    std::cout << "bottom left corner ( "<<i<<", "<<j<<"); ";
+    // std::cout << "bottom left corner ( "<<i<<", "<<j<<"); ";
 
     // mass balance + tangential stress
     discretization_->u(i-1,j) = discretization_->u(i,j);
@@ -895,7 +898,7 @@ void Computation::bottomLeftCornerBC(int i, int j)
         discretization_->p(i,j) = 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j+1) + discretization_->u(i-1,j+1) - discretization_->u(i,j) - discretization_->u(i-1,j)) / (discretization_->dy()) +
                                                              (discretization_->v(i+1,j) + discretization_->v(i+1,j-1) - discretization_->v(i,j) - discretization_->v(i,j-1)) / (discretization_->dx()));
     }
-    std::cout << "\n USING VALUES: v(i,j)-,v(i+1,j)+,v(i+1,j-1)+,v(i,j-1)-:"<< discretization_->v(i,j) << ", " << discretization_->v(i+1,j) << ", " << discretization_->v(i+1,j-1) << ", " << discretization_->v(i,j-1) << std::endl;
+    // std::cout << "\n USING VALUES: v(i,j)-,v(i+1,j)+,v(i+1,j-1)+,v(i,j-1)-:"<< discretization_->v(i,j) << ", " << discretization_->v(i+1,j) << ", " << discretization_->v(i+1,j-1) << ", " << discretization_->v(i,j-1) << std::endl;
 }
 
 /**
@@ -904,7 +907,7 @@ void Computation::bottomLeftCornerBC(int i, int j)
 void Computation::topWallBC(int i, int j)
 {
 
-    std::cout << "top wall ( "<<i<<", "<<j<<"); ";
+    // std::cout << "top wall ( "<<i<<", "<<j<<"); ";
     // mass balance
     discretization_->v(i,j) = discretization_->v(i,j-1) - discretization_->dy() / discretization_->dx() * (discretization_->u(i,j) - discretization_->u(i-1,j));
 
@@ -927,7 +930,7 @@ void Computation::topWallBC(int i, int j)
 void Computation::horizontalPipeBC(int i, int j)
 {
 
-    std::cout << "horizontal pipe ( "<<i<<", "<<j<<"); ";
+    // std::cout << "horizontal pipe ( "<<i<<", "<<j<<"); ";
     // external forces
     discretization_->v(i,j) = discretization_->v(i,j) + dt_ * settings_.g[1];
     discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
@@ -955,7 +958,7 @@ void Computation::horizontalPipeBC(int i, int j)
 void Computation::topLeftCornerBC(int i, int j)
 {
 
-    std::cout << "top left corner ( "<<i<<", "<<j<<"); ";
+    // // std::cout << "top left corner ( "<<i<<", "<<j<<"); ";
     // mass balance + tangential stress
     discretization_->v(i,j) = discretization_->v(i,j-1);
     discretization_->u(i-1,j) = discretization_->u(i,j);
@@ -986,7 +989,7 @@ void Computation::topLeftCornerBC(int i, int j)
 void Computation::tipFromRightBC(int i, int j)
 {
 
-    std::cout << "tip from right ( "<<i<<", "<<j<<"); ";
+    // std::cout << "tip from right ( "<<i<<", "<<j<<"); ";
     // external forces
     discretization_->v(i,j) = discretization_->v(i,j) + dt_ * settings_.g[1];
     discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
@@ -1023,7 +1026,7 @@ void Computation::tipFromRightBC(int i, int j)
 void Computation::rightWallBC(int i, int j)
 {
 
-    std::cout << "right wall ( "<<i<<", "<<j<<"); ";
+    // std::cout << "right wall ( "<<i<<", "<<j<<"); ";
     // mass balance
     discretization_->u(i,j) = discretization_->u(i-1,j) - discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
 
@@ -1043,7 +1046,7 @@ void Computation::rightWallBC(int i, int j)
 void Computation::bottomRightCornerBC(int i, int j)
 {
 
-    std::cout << "bottom right corner ( "<<i<<", "<<j<<"); ";
+    // std::cout << "bottom right corner ( "<<i<<", "<<j<<"); ";
     // mass balance + tangential stress
     discretization_->u(i,j) = discretization_->u(i-1,j);
     discretization_->v(i,j-1) = discretization_->v(i,j);
@@ -1074,7 +1077,7 @@ void Computation::bottomRightCornerBC(int i, int j)
 void Computation::verticalPipeBC(int i, int j)
 {
 
-    std::cout << "vertical pipe ( "<<i<<", "<<j<<"); ";
+    // std::cout << "vertical pipe ( "<<i<<", "<<j<<"); ";
     // external forces
     discretization_->u(i,j) = discretization_->u(i,j) + dt_ * settings_.g[0];
     discretization_->u(i-1,j) = discretization_->u(i-1,j) + dt_ * settings_.g[0];
@@ -1103,7 +1106,7 @@ void Computation::verticalPipeBC(int i, int j)
 void Computation::tipFromTopBC(int i, int j)
 {
 
-    std::cout << "tip from top ( "<<i<<", "<<j<<"); ";
+    // std::cout << "tip from top ( "<<i<<", "<<j<<"); ";
     // external forces
     discretization_->u(i,j) = discretization_->u(i,j) + dt_ * settings_.g[0];
     discretization_->u(i-1,j) = discretization_->u(i-1,j) + dt_ * settings_.g[0];
@@ -1137,7 +1140,7 @@ void Computation::tipFromTopBC(int i, int j)
 void Computation::topRightCornerBC(int i, int j)
 {
 
-    std::cout << "top right corner ( "<<i<<", "<<j<<"); ";
+    // std::cout << "top right corner ( "<<i<<", "<<j<<"); ";
     // mass balance + tangential stress
     discretization_->u(i,j) = discretization_->u(i-1,j);
     discretization_->v(i,j) = discretization_->v(i,j-1);
@@ -1170,7 +1173,7 @@ void Computation::topRightCornerBC(int i, int j)
 void Computation::tipFromLeftBC(int i, int j)
 {
 
-    std::cout << "tip from left ( "<<i<<", "<<j<<"); ";
+    // std::cout << "tip from left ( "<<i<<", "<<j<<"); ";
     // external forces
     discretization_->v(i,j) = discretization_->v(i,j) + dt_ * settings_.g[1];
     discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
@@ -1217,7 +1220,7 @@ void Computation::tipFromLeftBC(int i, int j)
 void Computation::tipFromBottomBC(int i, int j)
 {
 
-    std::cout << "tip from bottom ( "<<i<<", "<<j<<"); ";
+    //std::cout << "tip from bottom ( "<<i<<", "<<j<<"); ";
     // external forces
     discretization_->u(i,j) = discretization_->u(i,j) + dt_ * settings_.g[0];
     discretization_->u(i-1,j) = discretization_->u(i-1,j) + dt_ * settings_.g[0];
@@ -1264,7 +1267,7 @@ void Computation::tipFromBottomBC(int i, int j)
 void Computation::dropBC(int i, int j)
 {
 
-    std::cout << "drop ( "<<i<<", "<<j<<"); ";
+    //std::cout << "drop ( "<<i<<", "<<j<<"); ";
     // external forces
     discretization_->u(i,j) = discretization_->u(i,j) + dt_ * settings_.g[0];
     discretization_->u(i-1,j) = discretization_->u(i-1,j) + dt_ * settings_.g[0];

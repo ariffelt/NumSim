@@ -53,7 +53,7 @@ void PressureSolver::setBoundaryValues()
 {
     for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); i++)
     {
-        if(discretization_->isInnerFluidCell(i,discretization_->pJBegin()))
+        //if(discretization_->isInnerFluidCell(i,discretization_->pJBegin()))
         {
              discretization_->p(i, discretization_->pJEnd()) = discretization_->p(i, discretization_->pJEnd() - 1);
             discretization_->p(i, discretization_->pJBegin()) = discretization_->p(i, discretization_->pJBegin() + 1);
@@ -62,7 +62,7 @@ void PressureSolver::setBoundaryValues()
     }
     for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); j++)
     {
-        if(discretization_->isInnerFluidCell(discretization_->pIBegin(),j))
+        //if(discretization_->isInnerFluidCell(discretization_->pIBegin(),j))
         {
             discretization_->p(discretization_->pIEnd(), j) = discretization_->p(discretization_->pIEnd() - 1, j);
             discretization_->p(discretization_->pIBegin(), j) = discretization_->p(discretization_->pIBegin() + 1, j);
