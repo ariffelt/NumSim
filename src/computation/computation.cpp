@@ -116,25 +116,31 @@ void Computation::runSimulation()
         }
         t += dt_;
         std::cout << "t = " << t  << std::endl; // print time and time step width to the console
-        printParticles();
 
         // only compute preliminary velocities and rhs and solve pressure eq. on inner fluid cells
         
         computePreliminaryVelocities(); // compute preliminary velocities, F and G
-        
+
         computeRightHandSide(); // compute rhs of the Poisson equation for the pressure
         
         computePressure(); // solve the Poisson equation for the pressure
         
         computeVelocities(); // compute the new velocities, u,v, from the preliminary velocities, F,G and the pressure, p
         
+        outputWriterText_->writeFile(t);
+
+        updateSurfacePs_ = false;
+
         freeflowBC(); // apply free flow boundary conditions
-        
+
         applyBoundaryValues(); // set boundary values for u, v, F and G
 
         computeParticleVelocities();
 
         updateMarkerField(); 
+
+        updateSurfacePs_ = true;
+
 
         freeflowBC(); // apply free flow boundary conditions
 
@@ -323,7 +329,7 @@ void Computation::computePreliminaryVelocities()
     {
         for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd(); j++)
         {
-            if (discretization_->isInnerFluidCell(i,j))
+            if (discretization_->isFluidCell(i,j) && discretization_->isFluidCell(i+1,j))
             {
                 double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2uDx2(i, j) + discretization_->computeD2uDy2(i, j));
                 double convectionTerms = discretization_->computeDu2Dx(i, j) + discretization_->computeDuvDy(i, j);
@@ -338,12 +344,13 @@ void Computation::computePreliminaryVelocities()
     {
         for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1; j++)
         {
-            if (discretization_->isInnerFluidCell(i,j))
+            if (discretization_->isFluidCell(i,j) && discretization_->isFluidCell(i,j+1))
             {
                 double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2vDx2(i, j) + discretization_->computeD2vDy2(i, j));
                 double convectionTerms = discretization_->computeDuvDx(i, j) + discretization_->computeDv2Dy(i, j);
 
                 discretization_->g(i, j) = discretization_->v(i, j) + dt_ * (diffusionTerms - convectionTerms + settings_.g[1]);
+                // std::cout << "computed G for (" << i << ", " << j <<"): " <<discretization_->g(i, j) << std::endl;
             }
         }
     }
@@ -387,7 +394,7 @@ void Computation::computeVelocities()
     {
         for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd(); j++)
         {
-            if (discretization_->isInnerFluidCell(i,j))
+            if (discretization_->isFluidCell(i,j) && discretization_->isFluidCell(i+1,j))
             {
                 discretization_->u(i, j) = discretization_->f(i, j) - dt_ * (discretization_->p(i + 1, j) - discretization_->p(i, j)) / discretization_->dx();
             }
@@ -399,7 +406,7 @@ void Computation::computeVelocities()
     {
         for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1; j++)
         {
-            if (discretization_->isInnerFluidCell(i,j))
+            if (discretization_->isFluidCell(i,j) && discretization_->isFluidCell(i,j+1))
             {
                 discretization_->v(i, j) = discretization_->g(i, j) - dt_ * (discretization_->p(i, j + 1) - discretization_->p(i, j)) / discretization_->dy();
             }
@@ -431,6 +438,18 @@ void Computation::generateVirtualParticles()
     {
         generateDrop(1);
     }
+    else if (settings_.particelShape == "BIGDROP")
+    {
+        generateBigDrop(4);
+    }
+    else if (settings_.particelShape == "BAR")
+    {
+        generateBar(10);
+    }
+    else if(settings_.particelShape =="DROPWATER")
+    {
+        generateDropInWater(1);
+    }
     else
     {
     particlesX_ = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0,1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1,1.1,1.1};	
@@ -447,7 +466,7 @@ void Computation::generateDam(int noParticles)
     particlesX_ = {};
     particlesY_ = {};
 
-    for (int i=0; i<int(settings_.nCells[1]/4); i++)
+    for (int i=int(settings_.nCells[1]/4); i<int(3*settings_.nCells[1]/4); i++)
     {
         for (int j=0; j<int(settings_.nCells[1]); j++)
         {
@@ -466,18 +485,29 @@ void Computation::generateBox(int noParticles)
     particlesX_ = {};
     particlesY_ = {};
 
-    for (int i=0; i<int(settings_.nCells[1]); i++)
+    for (int i=int(3*settings_.nCells[0]/8); i<int(5*settings_.nCells[0]/8); i++)
     {
-        for (int j=0; j<int(settings_.nCells[1]); j++)
+        for (int j=int(3*settings_.nCells[1]/8); j<int(5*settings_.nCells[1]/8); j++)
         {
-            if (i > int(settings_.nCells[1])/4 && i < 3*int(settings_.nCells[1])/4 && j > int(settings_.nCells[1])/4 && j < 3*int(settings_.nCells[1])/4)
-            {
-                particlesX_.push_back(i*dx);
-                particlesY_.push_back(j*dy);
-            }
+            particlesX_.push_back(i*dx);
+            particlesY_.push_back(j*dy);
         }
-    
+    }
 }
+
+void Computation::generateBigDrop(int noParticles)
+{
+    particlesX_ = {};
+    particlesY_ = {};
+
+    for (int i = 0; i<2; i++)
+    {
+        for (int j = 0; j<2;j++)
+        {
+            particlesX_.push_back(settings_.nCells[0]/ 2 * discretization_->dx()+discretization_->dx()/2 - i*discretization_->dx());
+            particlesY_.push_back(settings_.nCells[1]/ 2 * discretization_->dy()+discretization_->dy()/2 - j* discretization_->dy());  
+        }
+    }
 }
 
 void Computation::generateDrop(int noParticles)
@@ -499,7 +529,7 @@ void Computation::generateFull(int noParticles)
     particlesX_ = {};
     particlesY_ = {};
 
-    for (int i=0; i<int(settings_.nCells[1]); i++)
+    for (int i=0; i<int(settings_.nCells[0]); i++)
     {
         for (int j=0; j<int(settings_.nCells[1]); j++)
         {
@@ -509,59 +539,93 @@ void Computation::generateFull(int noParticles)
     }
 }
 
+void Computation::generateBar(int noParticles)
+{
+
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
+    particlesX_ = {};
+    particlesY_ = {};
+
+    for (int i=0; i<int(settings_.nCells[0]); i++)
+    {
+        particlesX_.push_back(i*dx);
+        particlesX_.push_back(i*dx);
+        particlesY_.push_back((settings_.nCells[1]-1)*dy);
+        particlesY_.push_back((settings_.nCells[1]-2)*dy);
+    }
+}
+
+void Computation::generateDropInWater(int noParticles)
+{
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
+
+    for (int i = 0; i< settings_.nCells[0]; i++)
+    {
+        for (int j = 0; j< int(settings_.nCells[1]/16); j++)
+        {
+            particlesX_.push_back(i*dx);
+            particlesY_.push_back(j*dy);
+        }
+    }
+    particlesX_.push_back(int(settings_.nCells[0]/2)*dx);
+    particlesY_.push_back(int(settings_.nCells[1]/2)*dy);
+
+}
 /**
  * Compute the new particle velocities.
  * And move particles according to these.
  */
 void Computation::computeParticleVelocities()
 {
-    double dx = discretization_->dx();
-    double dy = discretization_->dy();
+    // double dx = discretization_->dx();
+    // double dy = discretization_->dy();
 
     // interpolate velocities to the particle positions (do not coincide with velocity grid points)
     for (int k = 0; k < particlesX_.size(); k++)
     {
         // compute particle velocity in x direction
 
-        // index of upper right corner
-        int iUpperRight = int(particlesX_[k] / dx + 1);
-        int jUpperRight = int((particlesY_[k] + 1 / 2) / dy + 1);
+        // // index of upper right corner
+        // int iUpperRight = int(particlesX_[k] / dx + 1);
+        // int jUpperRight = int((particlesY_[k] + 1 / 2) / dy + 1);
 
-        // position of 4 neighbouring grid points with values u
-        double x1 = (iUpperRight - 1) * dx;
-        double x2 = iUpperRight * dx;
-        double y1 = (jUpperRight - 1) * dy - dy / 2;
-        double y2 = jUpperRight * dy - dy / 2;
+        // // position of 4 neighbouring grid points with values u
+        // double x1 = (iUpperRight - 1) * dx;
+        // double x2 = iUpperRight * dx;
+        // double y1 = (jUpperRight - 1) * dy - dy / 2;
+        // double y2 = jUpperRight * dy - dy / 2;
 
 
 
-        // bilinear interpolation
-        double u = 1 / (dx * dy) * ((x2 - particlesX_[k]) * (y2 - particlesY_[k]) * discretization_->u(iUpperRight - 1, jUpperRight - 1) 
-                                    + (particlesX_[k] - x1) * (y2 - particlesY_[k]) * discretization_->u(iUpperRight, jUpperRight - 1) 
-                                    + (x2 - particlesX_[k]) * (particlesY_[k] - y1) * discretization_->u(iUpperRight - 1, jUpperRight) 
-                                    + (particlesX_[k] - x1) * (particlesY_[k] - y1) * discretization_->u(iUpperRight, jUpperRight));
+        // // bilinear interpolation
+        // double u = 1 / (dx * dy) * ((x2 - particlesX_[k]) * (y2 - particlesY_[k]) * discretization_->u(iUpperRight - 1, jUpperRight - 1) 
+        //                             + (particlesX_[k] - x1) * (y2 - particlesY_[k]) * discretization_->u(iUpperRight, jUpperRight - 1) 
+        //                             + (x2 - particlesX_[k]) * (particlesY_[k] - y1) * discretization_->u(iUpperRight - 1, jUpperRight) 
+        //                             + (particlesX_[k] - x1) * (particlesY_[k] - y1) * discretization_->u(iUpperRight, jUpperRight));
 
-        // compute particle velocity in y direction
-        // index of upper right corner
-        iUpperRight = int((particlesX_[k] + 1 / 2) / dx + 1);
-        jUpperRight = int(particlesY_[k] / dy + 1);
+        // // compute particle velocity in y direction
+        // // index of upper right corner
+        // iUpperRight = int((particlesX_[k] + 1 / 2) / dx + 1);
+        // jUpperRight = int(particlesY_[k] / dy + 1);
 
-        // position of 4 neighbouring grid points with values v
-        x1 = (iUpperRight - 1) * dx - dx / 2;
-        x2 = iUpperRight * dx - dx / 2;
-        y1 = (jUpperRight - 1) * dy;
-        y2 = jUpperRight * dy;
+        // // position of 4 neighbouring grid points with values v
+        // x1 = (iUpperRight - 1) * dx - dx / 2;
+        // x2 = iUpperRight * dx - dx / 2;
+        // y1 = (jUpperRight - 1) * dy;
+        // y2 = jUpperRight * dy;
 
-        // bilinear interpolation
-        double v = 1 / (dx * dy) * ((x2 - particlesX_[k]) * (y2 - particlesY_[k]) * discretization_->v(iUpperRight - 1, jUpperRight - 1) 
-                                    + (particlesX_[k] - x1) * (y2 - particlesY_[k]) * discretization_->v(iUpperRight, jUpperRight - 1) 
-                                    + (x2 - particlesX_[k]) * (particlesY_[k] - y1) * discretization_->v(iUpperRight - 1, jUpperRight) 
-                                    + (particlesX_[k] - x1) * (particlesY_[k] - y1) * discretization_->v(iUpperRight, jUpperRight));
+        // // bilinear interpolation
+        // double v = 1 / (dx * dy) * ((x2 - particlesX_[k]) * (y2 - particlesY_[k]) * discretization_->v(iUpperRight - 1, jUpperRight - 1) 
+        //                             + (particlesX_[k] - x1) * (y2 - particlesY_[k]) * discretization_->v(iUpperRight, jUpperRight - 1) 
+        //                             + (x2 - particlesX_[k]) * (particlesY_[k] - y1) * discretization_->v(iUpperRight - 1, jUpperRight) 
+        //                             + (particlesX_[k] - x1) * (particlesY_[k] - y1) * discretization_->v(iUpperRight, jUpperRight));
 
 
         // move particle
-        particlesX_[k] += dt_ * u;
-        particlesY_[k] += dt_ * v;
+        particlesX_[k] += dt_ * discretization_->u().interpolateAt(particlesX_[k], particlesY_[k]);
+        particlesY_[k] += dt_ * discretization_->v().interpolateAt(particlesX_[k], particlesY_[k]);
     }
 
     std::cout << "Particle velocities computed" << std::endl;
@@ -578,7 +642,7 @@ void Computation::updateMarkerField()
         for (int j = 0; j < discretization_->markerfieldSize()[1]; j++)
         {   
             // check if it is a fixed boundary cell
-            if (!discretization_->markerfield(i, j) == 2)
+            if (discretization_->markerfield(i, j) == 1)
             {   
                 discretization_->markerfield(i, j) = 0; // assume cell is empty
             }
@@ -602,138 +666,137 @@ void Computation::freeflowBC()
     // check if cell is fluid cell
     // check if it has 
     for (int i = 1; i <= discretization_->pSize()[0] - 1; i++)
-
     {
         for (int j = 1; j <= discretization_->pSize()[1] - 1; j++)
         {
             if (!discretization_->isInnerFluidCell(i,j) && discretization_->markerfield(i, j) == 1)
             {
                 // check if the right, top, left or bottom cell is a fluid cell
-                if (discretization_->markerfield(i + 1, j) == 1)
+                if (discretization_->markerfield(i + 1, j) >= 1)
                 {
-                    if (discretization_->markerfield(i, j + 1) == 1)
+                    if (discretization_->markerfield(i, j + 1) >= 1)
                     {
-                        if (discretization_->markerfield(i - 1, j) == 1)
+                        if (discretization_->markerfield(i - 1, j) >= 1)
                         {
                             // cell is surrounded by 3 fluid cells (bottom wall)
                             bottomWallBC(i,j);
-                            break;
+                            continue;
                         }
                         else
                         {
-                            if (discretization_->markerfield(i, j - 1) == 1)
+                            if (discretization_->markerfield(i, j - 1) >= 1)
                             {
                                 // cell is surrounded by 3 fluid cells (left wall)
                                 leftWallBC(i,j);
-                                break;
+                                continue;
                             }
                             else
                             {
                                 // cell is surrounded by 2 fluid cells (left, bottom corner)
                                 bottomLeftCornerBC(i,j);
-                                break;
+                                continue;
                             }
                         }
                     }
                     else
                     {
-                        if (discretization_->markerfield(i - 1, j) == 1)
+                        if (discretization_->markerfield(i - 1, j) >= 1)
                         {
-                            if (discretization_->markerfield(i, j - 1) == 1)
+                            if (discretization_->markerfield(i, j - 1) >= 1)
                             {
                                 // cell is surrounded by 3 fluid cells (top wall)
                                 topWallBC(i,j);
-                                break;
+                                continue;
                             }
                             else
                             {
                                 // cell is surrounded by 2 fluid cells (horizontal pipe)
                                 horizontalPipeBC(i,j);
-                                break;
+                                continue;
                             }
                         }
                         else
                         {
-                            if (discretization_->markerfield(i, j - 1) == 1)
+                            if (discretization_->markerfield(i, j - 1) >= 1)
                             {
                                 // cell is surrounded by 2 fluid cells (top, left corner)
                                 topLeftCornerBC(i,j);
-                                break;
+                                continue;
                             }
                             else
                             {
                                 // cell is surrounded by 1 fluid cell (tip from right)
                                 tipFromRightBC(i,j);
-                                break;
+                                continue;
                             }
                         }
                     }
                 }
                 else 
                 {
-                    if (discretization_->markerfield(i, j + 1) == 1)
+                    if (discretization_->markerfield(i, j + 1) >= 1)
                     {
-                        if (discretization_->markerfield(i - 1, j) == 1)
+                        if (discretization_->markerfield(i - 1, j) >= 1)
                         {
-                            if (discretization_->markerfield(i, j - 1) == 1)
+                            if (discretization_->markerfield(i, j - 1) >= 1)
                             {
                                 // cell is surrounded by 3 fluid cells (right wall)
                                 rightWallBC(i,j);
-                                break;
+                                continue;
                             }
                             else
                             {
                                 // cell is surrounded by 2 fluid cells (bottom, right corner)
                                 bottomRightCornerBC(i,j);
-                                break;
+                                continue;
                             }
                         }
                         else
                         {
-                            if (discretization_->markerfield(i, j - 1) == 1)
+                            if (discretization_->markerfield(i, j - 1) >= 1)
                             {
                                 // cell is surrounded by 2 fluid cells (vertical pipe)
                                 verticalPipeBC(i,j);
-                                break;
+                                continue;
                             }
                             else
                             {
                                 // cell is surrounded by 1 fluid cell (tip from top)
                                 tipFromTopBC(i,j);
-                                break;
+                                continue;
                             }
                         }
                     }
                     else
                     {
-                        if (discretization_->markerfield(i - 1, j) == 1)
+                        if (discretization_->markerfield(i - 1, j) >= 1)
                         {
-                            if (discretization_->markerfield(i, j - 1) == 1)
+                            if (discretization_->markerfield(i, j - 1) >= 1)
                             {
                                 // cell is surrounded by 2 fluid cells (top, right corner)
                                 topRightCornerBC(i,j);
-                                break;
+                                continue;
                             }
                             else
                             {
                                 // cell is surrounded by 1 fluid cell (tip from left)
                                 tipFromLeftBC(i,j);
-                                break;
+                                continue;
                             }
                         }
                         else
                         {
-                            if (discretization_->markerfield(i, j - 1) == 1)
+                            if (discretization_->markerfield(i, j - 1) >= 1)
                             {
                                 // cell is surrounded by 1 fluid cell (tip from bottom)
                                 tipFromBottomBC(i,j);
-                                break;
+                                continue;
                             }
                             else
                             {
                                 // cell is surrounded by 0 fluid cells (drop)
                                 dropBC(i,j);
-                                break;
+                                continue;
                             }
                         }
                     }
@@ -741,8 +804,6 @@ void Computation::freeflowBC()
             }
         }
     }
-
-    std::cout << std::endl;
 }
 
 /**
@@ -756,10 +817,16 @@ void Computation::bottomWallBC(int i, int j)
     discretization_->v(i,j-1) = discretization_->v(i,j) + discretization_->dy() / discretization_->dx() * (discretization_->u(i,j) - discretization_->u(i-1,j));
 
     // tangential stress
-    discretization_->u(i-1,j-1) = discretization_->u(i-1,j) + discretization_->dy() / discretization_->dx() * (discretization_->v(i,j-1) - discretization_->v(i-1,j-1));
+    if (discretization_->markerfield(i-1,j-1) == 0)
+    {
+        discretization_->u(i-1,j-1) = discretization_->u(i-1,j) + discretization_->dy() / discretization_->dx() * (discretization_->v(i,j-1) - discretization_->v(i-1,j-1));
+    }
 
+    if (updateSurfacePs_)
+    {
     // normal stress
-    discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->v(i,j) - discretization_->v(i,j-1)) / discretization_->dy();
+        discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->v(i,j) - discretization_->v(i,j-1)) / discretization_->dy();
+    }
 }
 
 /**
@@ -773,11 +840,18 @@ void Computation::leftWallBC(int i, int j)
     discretization_->u(i-1,j) = discretization_->u(i,j) + discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
 
     // tangential stress
-    discretization_->v(i-1,j-1) = discretization_->v(i,j-1) + discretization_->dx() / discretization_->dy() * (discretization_->u(i-1,j) - discretization_->u(i-1,j-1));
+    if (discretization_->markerfield(i-1,j-1) == 0)
+    {
+        discretization_->v(i-1,j-1) = discretization_->v(i,j-1) + discretization_->dx() / discretization_->dy() * (discretization_->u(i-1,j) - discretization_->u(i-1,j-1));
+    }
 
     // normal stress
-    discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->u(i,j) - discretization_->u(i-1,j)) / discretization_->dx();
-}
+    if (updateSurfacePs_)
+    {
+        discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->u(i,j) - discretization_->u(i-1,j)) / discretization_->dx();
+
+    }
+}   
 
 /**
  * compute the boundary conditions for the bottom left corner
@@ -789,11 +863,20 @@ void Computation::bottomLeftCornerBC(int i, int j)
     // mass balance + tangential stress
     discretization_->u(i-1,j) = discretization_->u(i,j);
     discretization_->v(i,j-1) = discretization_->v(i,j);
-    discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
-    discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
+
+    if (discretization_->markerfield(i-1,j-1) == 0)
+    {
+        discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
+        discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
+    }
                                 
     // normal stress
-    discretization_->p(i,j) = 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j+1) + discretization_->u(i-1,j+1) - discretization_->u(i,j) - discretization_->u(i-1,j)) / (discretization_->dy()) + (discretization_->v(i+1,j) + discretization_->v(i+1,j-1) - discretization_->v(i,j) - discretization_->v(i,j-1)) / (discretization_->dx()));
+    if (updateSurfacePs_)
+    {
+        discretization_->p(i,j) = 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j+1) + discretization_->u(i-1,j+1) - discretization_->u(i,j) - discretization_->u(i-1,j)) / (discretization_->dy()) +
+                                                             (discretization_->v(i+1,j) + discretization_->v(i+1,j-1) - discretization_->v(i,j) - discretization_->v(i,j-1)) / (discretization_->dx()));
+    }
+    std::cout << "\n USING VALUES: v(i,j)-,v(i+1,j)+,v(i+1,j-1)+,v(i,j-1)-:"<< discretization_->v(i,j) << ", " << discretization_->v(i+1,j) << ", " << discretization_->v(i+1,j-1) << ", " << discretization_->v(i,j-1) << std::endl;
 }
 
 /**
@@ -807,10 +890,16 @@ void Computation::topWallBC(int i, int j)
     discretization_->v(i,j) = discretization_->v(i,j-1) - discretization_->dy() / discretization_->dx() * (discretization_->u(i,j) - discretization_->u(i-1,j));
 
     // tangential stress
-    discretization_->u(i-1,j+1) = discretization_->u(i-1,j) - discretization_->dy() / discretization_->dx() * (discretization_->v(i,j) - discretization_->v(i-1,j));
+    if (discretization_->markerfield(i-1,j+1) == 0)
+    {
+        discretization_->u(i-1,j+1) = discretization_->u(i-1,j) - discretization_->dy() / discretization_->dx() * (discretization_->v(i,j) - discretization_->v(i-1,j));
+    }
 
     // normal stress
-    discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->v(i,j) - discretization_->v(i,j-1)) / discretization_->dy();
+    if (updateSurfacePs_)
+    {
+        discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->v(i,j) - discretization_->v(i,j-1)) / discretization_->dy();
+    }
 }
 
 /**
@@ -825,11 +914,20 @@ void Computation::horizontalPipeBC(int i, int j)
     discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
 
     // tangential stress
-    discretization_->u(i-1,j+1) = discretization_->u(i-1,j) - discretization_->dy() / discretization_->dx() * (discretization_->v(i,j) - discretization_->v(i-1,j));
-    discretization_->u(i-1,j-1) = discretization_->u(i-1,j) + discretization_->dy() / discretization_->dx() * (discretization_->v(i,j-1) - discretization_->v(i-1,j-1));
+    if (discretization_->markerfield(i-1,j+1) == 0)
+    {
+        discretization_->u(i-1,j+1) = discretization_->u(i-1,j) - discretization_->dy() / discretization_->dx() * (discretization_->v(i,j) - discretization_->v(i-1,j));
+    }
+    if (discretization_->markerfield(i-1,j-1) == 0)
+    {
+        discretization_->u(i-1,j-1) = discretization_->u(i-1,j) + discretization_->dy() / discretization_->dx() * (discretization_->v(i,j-1) - discretization_->v(i-1,j-1));
+    }
                                 
     // normal stress
-    discretization_->p(i,j) = 0.0;
+    if (updateSurfacePs_)
+    {
+        discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->v(i,j) - discretization_->v(i-1,j)) / discretization_->dy();
+    }
 }
 
 /**
@@ -841,15 +939,26 @@ void Computation::topLeftCornerBC(int i, int j)
     std::cout << "top left corner ( "<<i<<", "<<j<<"); ";
     // mass balance + tangential stress
     discretization_->v(i,j) = discretization_->v(i,j-1);
-    discretization_->u(i,j) = discretization_->u(i-1,j);
     discretization_->u(i-1,j) = discretization_->u(i,j);
-    discretization_->v(i-1,j) = discretization_->v(i,j);
+
+    if (discretization_->markerfield(i-1,j+1) == 0)
+    {
+        discretization_->v(i-1,j) = discretization_->v(i,j);
+        discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
+    }
 
     // tangential stress
-    discretization_->v(i-1,j-1) = discretization_->v(i,j-1) + discretization_->dx() / discretization_->dy() * (discretization_->u(i-1,j) - discretization_->u(i-1,j-1));
+    if (discretization_->markerfield(i-1,j-1) == 0)
+    {
+        discretization_->v(i-1,j-1) = discretization_->v(i,j-1) + discretization_->dx() / discretization_->dy() * (discretization_->u(i-1,j) - discretization_->u(i-1,j-1));
+    }
 
     // normal stress
-    discretization_->p(i,j) = - 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j) + discretization_->u(i-1,j) - discretization_->u(i,j-1) - discretization_->u(i-1,j-1)) / (discretization_->dy()) + (discretization_->v(i+1,j) + discretization_->v(i+1,j-1) - discretization_->v(i,j) - discretization_->v(i,j-1)) / (discretization_->dx()));
+    if (updateSurfacePs_)
+    {
+        discretization_->p(i,j) = - 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j) - discretization_->u(i-1,j) - discretization_->u(i,j-1) - discretization_->u(i-1,j-1)) / (discretization_->dy()) +
+                                                                (discretization_->v(i+1,j) + discretization_->v(i+1,j-1) - discretization_->v(i,j) - discretization_->v(i,j-1)) / (discretization_->dx()));
+    }
 }
 
 /**
@@ -867,13 +976,26 @@ void Computation::tipFromRightBC(int i, int j)
     discretization_->u(i-1,j) = discretization_->u(i,j) + discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
                                 
     // mass balance + tangential stress
-    discretization_->v(i-1,j) = discretization_->v(i,j);
+    if (discretization_->markerfield(i-1,j+1) == 0)
+    {
+        discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
+        discretization_->v(i-1,j) = discretization_->v(i,j);
+    }
+    if (discretization_->markerfield(i-1,j-1) == 0)
+    {
+    discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
     discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
     discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
-    discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
+        discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
+    discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
+        discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
+    }
 
     // normal stress
-    discretization_->p(i,j) = 0.0;
+    if (updateSurfacePs_)
+    {
+        discretization_->p(i,j) = 0.0;
+    }
 }
 
 /**
@@ -886,11 +1008,14 @@ void Computation::rightWallBC(int i, int j)
     // mass balance
     discretization_->u(i,j) = discretization_->u(i-1,j) - discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
 
-    // tangential stress
+    // normal stress
     discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->u(i,j) - discretization_->u(i-1,j)) / discretization_->dx();
 
-    // normal stress
-    discretization_->v(i+1,j-1) = discretization_->v(i,j-1) - discretization_->dx() / discretization_->dy() * (discretization_->u(i,j) - discretization_->u(i,j-1));
+    // tangential stress
+    if (discretization_->markerfield(i+1,j-1) == 0)
+    {
+        discretization_->v(i+1,j-1) = discretization_->v(i,j-1) - discretization_->dx() / discretization_->dy() * (discretization_->u(i,j) - discretization_->u(i,j-1));
+    }
 }
 
 /**
@@ -903,15 +1028,26 @@ void Computation::bottomRightCornerBC(int i, int j)
     // mass balance + tangential stress
     discretization_->u(i,j) = discretization_->u(i-1,j);
     discretization_->v(i,j-1) = discretization_->v(i,j);
-    discretization_->u(i,j-1) = discretization_->u(i,j);
-    discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
+
+    if (discretization_->markerfield(i+1,j-1) == 0)
+    {
+        discretization_->u(i,j-1) = discretization_->u(i,j);
+        discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
+    }
 
     // tangential stress
-    discretization_->u(i-1,j-1) = discretization_->u(i-1,j) + discretization_->dy() / discretization_->dx() * (discretization_->v(i,j-1) - discretization_->v(i-1,j-1));
+    if (discretization_->markerfield(i-1,j-1) == 0)
+    {
+        discretization_->u(i-1,j-1) = discretization_->u(i-1,j) + discretization_->dy() / discretization_->dx() * (discretization_->v(i,j-1) - discretization_->v(i-1,j-1));
+    }
                                 
     // normal stress
-    discretization_->p(i,j) = - 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j+1) + discretization_->u(i-1,j+1) - discretization_->u(i,j) - discretization_->u(i-1,j)) / (discretization_->dy()) + (discretization_->v(i,j) + discretization_->v(i,j-1) - discretization_->v(i-1,j) - discretization_->v(i-1,j-1)) / (discretization_->dx()));
+    if (updateSurfacePs_)
+    {
+        discretization_->p(i,j) = - 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j+1) + discretization_->u(i-1,j+1) - discretization_->u(i,j) - discretization_->u(i-1,j)) / (discretization_->dy()) + (discretization_->v(i,j) + discretization_->v(i,j-1) - discretization_->v(i-1,j) - discretization_->v(i-1,j-1)) / (discretization_->dx()));
+    }
 }
+
 
 /**
  * compute the boundary conditions for the vertical pipe
@@ -925,12 +1061,21 @@ void Computation::verticalPipeBC(int i, int j)
     discretization_->u(i-1,j) = discretization_->u(i-1,j) + dt_ * settings_.g[0];
 
     // tangential stress
-    discretization_->v(i-1, j-1) = discretization_->v(i,j-1) + discretization_->dx() / discretization_->dy() * (discretization_->u(i-1,j) - discretization_->u(i-1,j-1));
-    discretization_->v(i+1,j-1) = discretization_->v(i,j-1) - discretization_->dx() / discretization_->dy() * (discretization_->u(i,j) - discretization_->u(i,j-1));
+    if (discretization_->markerfield(i-1,j-1) == 0)
+    {
+        discretization_->v(i-1, j-1) = discretization_->v(i,j-1) + discretization_->dx() / discretization_->dy() * (discretization_->u(i-1,j) - discretization_->u(i-1,j-1));
+    }
+    if (discretization_->markerfield(i+1,j-1) == 0)
+    {
+        discretization_->v(i+1,j-1) = discretization_->v(i,j-1) - discretization_->dx() / discretization_->dy() * (discretization_->u(i,j) - discretization_->u(i,j-1));
+    }
 
     // normal stress
     //TODO: check, should maybe not be zero
-    discretization_->p(i,j) = 0.0;
+    if (updateSurfacePs_)
+    {
+        discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->u(i,j) - discretization_->u(i-1,j)) / discretization_->dx();
+    }
 }
 
 /**
@@ -951,10 +1096,20 @@ void Computation::tipFromTopBC(int i, int j)
     discretization_->v(i,j-1) = discretization_->v(i,j) + discretization_->dy() / discretization_->dx() * (discretization_->u(i,j) - discretization_->u(i-1,j));
 
     // mass balance + tangential stress
+    if (discretization_->markerfield(i-1,j-1) == 0)
+    {
+    discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
     discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
     discretization_->u(i,j-1) = discretization_->u(i,j);
-    discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
-    discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
+        discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
+    discretization_->u(i,j-1) = discretization_->u(i,j);
+        discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
+    }
+    if (discretization_->markerfield(i+1,j-1) == 0)
+    {
+        discretization_->u(i,j-1) = discretization_->u(i,j);
+        discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
+    }
 }
 
 /**
@@ -967,15 +1122,27 @@ void Computation::topRightCornerBC(int i, int j)
     // mass balance + tangential stress
     discretization_->u(i,j) = discretization_->u(i-1,j);
     discretization_->v(i,j) = discretization_->v(i,j-1);
-    discretization_->u(i,j+1) = discretization_->u(i,j);
-    discretization_->v(i+1,j) = discretization_->v(i,j);
+
+    if (discretization_->markerfield(i+1,j+1) == 0)
+    {
+        discretization_->u(i,j+1) = discretization_->u(i,j);
+        discretization_->v(i+1,j) = discretization_->v(i,j);
+    }
 
     // normal stress
-    discretization_->p(i,j) = 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j) + discretization_->u(i-1,j) - discretization_->u(i,j-1) - discretization_->u(i-1,j-1)) / (discretization_->dy()) + (discretization_->v(i,j) + discretization_->v(i,j-1) - discretization_->v(i-1,j) - discretization_->v(i-1,j-1)) / (discretization_->dx()));
-
+    if (updateSurfacePs_)
+    {
+        discretization_->p(i,j) = 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j) + discretization_->u(i-1,j) - discretization_->u(i,j-1) - discretization_->u(i-1,j-1)) / (discretization_->dy()) + (discretization_->v(i,j) + discretization_->v(i,j-1) - discretization_->v(i-1,j) - discretization_->v(i-1,j-1)) / (discretization_->dx()));
+    }
     // tangential stress
-    discretization_->u(i-1,j+1) = discretization_->u(i-1,j) - discretization_->dy() / discretization_->dx() * (discretization_->v(i,j) - discretization_->v(i-1,j));
-    discretization_->v(i+1,j-1) = discretization_->v(i,j-1) - discretization_->dx() / discretization_->dy() * (discretization_->u(i,j) - discretization_->u(i,j-1));
+    if (discretization_->markerfield(i-1,j+1) == 0)
+    {
+        discretization_->u(i-1,j+1) = discretization_->u(i-1,j) - discretization_->dy() / discretization_->dx() * (discretization_->v(i,j) - discretization_->v(i-1,j));
+    }
+    if (discretization_->markerfield(i+1,j-1) == 0)
+    {
+        discretization_->v(i+1,j-1) = discretization_->v(i,j-1) - discretization_->dx() / discretization_->dy() * (discretization_->u(i,j) - discretization_->u(i,j-1));
+    }
 }
 
 /**
@@ -990,20 +1157,39 @@ void Computation::tipFromLeftBC(int i, int j)
     discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
 
     // pressure is set to 0
-    discretization_->p(i,j) = 0.0;
+    if (updateSurfacePs_)
+    {
+        discretization_->p(i,j) = 0.0;
+    }
 
     // mass balance
     discretization_->u(i,j) = discretization_->u(i-1,j) - discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
 
     // mass balance + tangential stress
-    discretization_->v(i+1,j) = discretization_->v(i,j);
+    if (discretization_->markerfield(i+1,j+1) == 0)
+    {
+        discretization_->u(i,j+1) = discretization_->u(i,j);
+        discretization_->v(i+1,j) = discretization_->v(i,j);
+    }
+    if (discretization_->markerfield(i+1,j-1) == 0)
+    {
+    discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
     discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
     discretization_->u(i,j+1) = discretization_->u(i,j);
-    discretization_->u(i,j-1) = discretization_->u(i,j);
+        discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
+    discretization_->u(i,j+1) = discretization_->u(i,j);
+        discretization_->u(i,j-1) = discretization_->u(i,j);
+    }
 
     // tangential stress
-    discretization_->u(i-1,j+1) = discretization_->u(i-1,j) - discretization_->dy() / discretization_->dx() * (discretization_->v(i,j) - discretization_->v(i-1,j));
-    discretization_->u(i-1,j-1) = discretization_->u(i-1,j) + discretization_->dy() / discretization_->dx() * (discretization_->v(i,j-1) - discretization_->v(i-1,j-1));
+    if (discretization_->markerfield(i-1,j+1) == 0)
+    {
+        discretization_->u(i-1,j+1) = discretization_->u(i-1,j) - discretization_->dy() / discretization_->dx() * (discretization_->v(i,j) - discretization_->v(i-1,j));
+    }
+    if (discretization_->markerfield(i-1,j-1) == 0)
+    {
+        discretization_->u(i-1,j-1) = discretization_->u(i-1,j) + discretization_->dy() / discretization_->dx() * (discretization_->v(i,j-1) - discretization_->v(i-1,j-1));
+    }
 }
 
 /*
@@ -1021,17 +1207,36 @@ void Computation::tipFromBottomBC(int i, int j)
     discretization_->v(i,j) = discretization_->v(i,j-1) - discretization_->dy() / discretization_->dx() * (discretization_->u(i,j) - discretization_->u(i-1,j));
 
     // mass balance + tangential stress
+    if (discretization_->markerfield(i+1,j+1) == 0)
+    {
+        discretization_->v(i+1,j) = discretization_->v(i,j);
+        discretization_->u(i,j+1) = discretization_->u(i,j);
+    }
+    if (discretization_->markerfield(i-1,j+1) == 0)
+    {
+    discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
     discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
     discretization_->u(i,j+1) = discretization_->u(i,j);
-    discretization_->v(i-1,j) = discretization_->v(i,j);
-    discretization_->v(i+1,j) = discretization_->v(i,j);
+        discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
+    discretization_->u(i,j+1) = discretization_->u(i,j);
+        discretization_->v(i-1,j) = discretization_->v(i,j);
+    }
 
     // tangential stress
-    discretization_->v(i-1,j-1) = discretization_->v(i,j-1) + discretization_->dx() / discretization_->dy() * (discretization_->u(i-1,j) - discretization_->u(i-1,j-1));
-    discretization_->v(i+1,j-1) = discretization_->v(i,j-1) - discretization_->dx() / discretization_->dy() * (discretization_->u(i,j) - discretization_->u(i,j-1));
+    if (discretization_->markerfield(i-1,j-1) == 0)
+    {
+        discretization_->v(i-1,j-1) = discretization_->v(i,j-1) + discretization_->dx() / discretization_->dy() * (discretization_->u(i-1,j) - discretization_->u(i-1,j-1));
+    }
+    if (discretization_->markerfield(i+1,j-1) == 0)
+    {
+        discretization_->v(i+1,j-1) = discretization_->v(i,j-1) - discretization_->dx() / discretization_->dy() * (discretization_->u(i,j) - discretization_->u(i,j-1));
+    }
 
     // pressure is set to 0
-    discretization_->p(i,j) = 0.0;
+    if (updateSurfacePs_)
+    {
+        discretization_->p(i,j) = 0.0;
+    }
 }
 
 /*
@@ -1048,15 +1253,36 @@ void Computation::dropBC(int i, int j)
     discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
                                 
     // pressure is set to 0
-    discretization_->p(i,j) = 0.0;
+    if (updateSurfacePs_)
+    {
+        discretization_->p(i,j) = 0.0;
+    }
 
     // mass balance + tangential stress
-    discretization_->u(i,j+1) = discretization_->u(i,j);
+    if (discretization_->markerfield(i+1,j+1) == 0)
+    {
+        discretization_->u(i,j+1) = discretization_->u(i,j);
+        discretization_->v(i+1,j) = discretization_->v(i,j);
+    }
+    if (discretization_->markerfield(i+1,j-1) == 0)
+    {
+    discretization_->u(i,j-1) = discretization_->u(i,j);
     discretization_->u(i,j-1) = discretization_->u(i,j);
     discretization_->v(i+1,j) = discretization_->v(i,j);
     discretization_->v(i-1,j) = discretization_->v(i,j);
-    discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
-    discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
-    discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
-    discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
+        discretization_->u(i,j-1) = discretization_->u(i,j);
+    discretization_->v(i+1,j) = discretization_->v(i,j);
+    discretization_->v(i-1,j) = discretization_->v(i,j);
+        discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
+    }
+    if (discretization_->markerfield(i-1,j-1) == 0)
+    {
+        discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
+        discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
+    }
+    if (discretization_->markerfield(i-1,j+1) == 0)
+    {
+        discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
+        discretization_->v(i-1,j) = discretization_->v(i,j);
+    }
 }

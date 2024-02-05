@@ -130,6 +130,8 @@ public:
     //! size of rhs
     std::array<int, 2> rhsSize() const;
 
+    bool isFluidCell(int i, int j);
+
     bool isInnerFluidCell(int i, int j);
 
 

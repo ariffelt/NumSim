@@ -55,6 +55,12 @@ private:
 
     void generateDrop(int noParticles);
 
+    void generateBigDrop(int noParticles);
+
+    void generateBar(int noParticles);
+
+    void generateDropInWater(int noParticles);  
+
     // void updateCellTypes();
 
     void updateMarkerField();
@@ -112,4 +118,6 @@ private:
 
     std::vector<double> particlesX_;
     std::vector<double> particlesY_;
+
+    bool updateSurfacePs_ = false;
 };

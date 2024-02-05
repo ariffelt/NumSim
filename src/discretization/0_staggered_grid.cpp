@@ -1,6 +1,7 @@
 #include "discretization/0_staggered_grid.h"
 
 #include <cassert>
+#include <iostream>
 
 /**
  * Constructor of staggered grid.
@@ -336,6 +337,11 @@ std::array<int, 2> StaggeredGrid::rhsSize() const
     return {nCells_[0] + 2, nCells_[1] + 2};
 }
 
+bool StaggeredGrid::isFluidCell(int i, int j)
+{
+    return markerfield(i, j) == 1;
+}
+
 /**
  * Check if cell has any neighbouring empty cell, if it has none then it is an inner fluid cell.
  */
@@ -350,6 +356,7 @@ bool StaggeredGrid::isInnerFluidCell(int i, int j)
         if (markerfield(i - 1, j) >= 1 && markerfield(i + 1, j) >= 1 && markerfield(i, j - 1) >= 1 && markerfield(i, j + 1) >= 1)
         {
             isInnerFluidCell = true;
+            // std::cout << "Inner fluid cell at (" << i << "," << j << ")"<<std::endl;
         }
     }
     return isInnerFluidCell;
