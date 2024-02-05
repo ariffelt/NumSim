@@ -135,12 +135,15 @@ void Computation::runSimulation()
 
         applyBoundaryValues(); // set boundary values for u, v, F and G
 
+        std::cout << "vor updateParticleVelocities" << std::endl;
+
         computeParticleVelocities();
+
+        std::cout << "nach updateParticleVelocities" << std::endl;
 
         updateMarkerField(); 
 
         updateSurfacePs_ = true;
-
 
         freeflowBC(); // apply free flow boundary conditions
 
@@ -424,7 +427,7 @@ void Computation::generateVirtualParticles()
     // todo: remove hardcoding
     if (settings_.particelShape == "DAM")
     {
-        generateDam(20);
+        generateDam(5);
     }
     else if (settings_.particelShape == "FULL")
     {
@@ -489,8 +492,11 @@ void Computation::generateBox(int noParticles)
     {
         for (int j=int(3*settings_.nCells[1]/8); j<int(5*settings_.nCells[1]/8); j++)
         {
-            particlesX_.push_back(i*dx);
-            particlesY_.push_back(j*dy);
+            for (int k=0; k<noParticles; k++)
+            {
+                particlesX_.push_back(i*dx + k*dx/noParticles);
+                particlesY_.push_back(j*dy + k*dy/noParticles);
+            }
         }
     }
 }
