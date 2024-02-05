@@ -48,22 +48,36 @@ void SOR::solve()
     while (res2 >= epsilon2 && iteration < maximumNumberOfIterations_)
     {
         // implement SOR for the inner points
+
+        // std::cout << "SOR iteration: " << iteration << " residual: " << res2 << std::endl;
+
         for (int i = discretization_->pIBegin() + 1; i < discretization_->pIEnd(); i++)
         {
+            // std::cout << "i: " << i << std::endl;
             for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd(); j++)
             {
+                // std::cout << "j: " << j << std::endl;
                 if (discretization_->isInnerFluidCell(i, j))
                 {
+                    // std::cout << "i: " << i << " j: " << j << std::endl;
                     double px = (discretization_->p(i - 1, j) + discretization_->p(i + 1, j)) / (hx2);
                     double py = (discretization_->p(i, j - 1) + discretization_->p(i, j + 1)) / (hy2);
 
+                    // std::cout << "px: " << px << " py: " << py << std::endl;
+
                     discretization_->p(i, j) = (1 - omega_) * discretization_->p(i, j) + omega_ * prefactor * (px + py - discretization_->rhs(i, j));
+
+                    // std::cout << "p(i, j): " << discretization_->p(i, j) << std::endl;
                 }
             }
         }
 
+        // std::cout << "SOR iteration: " << iteration << " residual: " << res2 << std::endl;
+
         // update boundary values such that Neumann Boundary conditions are fulfilled
         setBoundaryValues();
+
+        // std::cout << "SOR iteration: " << iteration << " residual: " << res2 << std::endl;
 
         // increase iteration
         iteration++;

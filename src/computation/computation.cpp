@@ -107,6 +107,8 @@ void Computation::runSimulation()
 
     while (t < settings_.endTime)
     {
+        setFountainVelocity();
+        
         applyBoundaryValues(); // set boundary values for u, v, F and G
 
         computeTimeStepWidth();
@@ -479,9 +481,12 @@ void Computation::generateDam(int noParticles)
     particlesX_ = {};
     particlesY_ = {};
 
-    for (int i=int(settings_.nCells[1]/4); i<int(3*settings_.nCells[1]/4); i++)
+    // for (int i=int(settings_.nCells[1]/4); i<int(3*settings_.nCells[1]/4); i++)
+    for (int i=int(0); i<int(settings_.nCells[0]); i++)
+
     {
-        for (int j=0; j<int(settings_.nCells[1]) - 3; j++)
+        //for (int j=0; j<int(settings_.nCells[1]); j++)
+        for (int j=0; j<int(settings_.nCells[1])/5; j++)
         {
             for (int k=0; k<noParticles; k++)
             {
@@ -1328,4 +1333,11 @@ void Computation::resetEmptyEdges()
             }
         }
     }
+}
+
+void Computation::setFountainVelocity()
+{
+    discretization_->v(int(settings_.nCells[0]/2), int(settings_.nCells[1]/5 - 1)) = 6;
+    discretization_->v(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 1)) = 6;
+    discretization_->v(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 1)) = 6;
 }

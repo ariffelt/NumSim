@@ -25,6 +25,8 @@ public:
     void setBoundaryMarkers();
 
 private:
+    
+    void setFountainVelocity();
     //! compute the time step width dt from maximum velocities
     void computeTimeStepWidth();
 

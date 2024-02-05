@@ -353,6 +353,7 @@ bool StaggeredGrid::isInnerFluidCell(int i, int j)
     bool isInnerFluidCell = false;
     if (markerfield(i, j) == 1)
     {
+        // std::cout << "Checking for inner fluid cell at (" << i << "," << j << ")"<<std::endl;
         if (markerfield(i - 1, j) >= 1 && markerfield(i + 1, j) >= 1 && markerfield(i, j - 1) >= 1 && markerfield(i, j + 1) >= 1)
         {
             isInnerFluidCell = true;
