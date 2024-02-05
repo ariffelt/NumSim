@@ -49,7 +49,7 @@ private:
 
     void computeParticleVelocities();
 
-    void generateDam(int noParticles);
+    void generateDam(int noParticles, int noParticlesFountain);
 
     void generateFull(int noParticles);
 

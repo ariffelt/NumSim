@@ -139,15 +139,15 @@ void Computation::runSimulation()
 
         applyBoundaryValues(); // set boundary values for u, v, F and G
 
-        std::cout << "vor updateParticleVelocities" << std::endl;
+        // std::cout << "vor updateParticleVelocities" << std::endl;
 
         computeParticleVelocities();
 
-        std::cout << "nach updateParticleVelocities" << std::endl;
+        // std::cout << "nach updateParticleVelocities" << std::endl;
 
         updateMarkerField(); 
 
-        std::cout << "nach updateMarkerfield" << std::endl;
+        // std::cout << "nach updateMarkerfield" << std::endl;
 
         resetEmptyEdges();
 
@@ -155,12 +155,12 @@ void Computation::runSimulation()
 
         freeflowBC(); // apply free flow boundary conditions
 
-        std::cout << "nach freeFlowBC" << std::endl;
+        // std::cout << "nach freeFlowBC" << std::endl;
 
         outputWriterParaview_->writeFile(t); // output simulation results
         outputWriterText_->writeFile(t);
 
-        std::cout << "nach Outputwriter" << std::endl;
+        // std::cout << "nach Outputwriter" << std::endl;
 
         if (t >= timestepInterval)
         {
@@ -439,7 +439,9 @@ void Computation::generateVirtualParticles()
     // todo: remove hardcoding
     if (settings_.particelShape == "DAM")
     {
-        generateDam(10);
+        generateDam(10, 100);
+        //generateDam(10, 10);
+        
     }
     else if (settings_.particelShape == "FULL")
     {
@@ -472,7 +474,7 @@ void Computation::generateVirtualParticles()
     }
 }
 
-void Computation::generateDam(int noParticles)
+void Computation::generateDam(int noParticles, int noParticlesFountain)
 {
     // Distribute the noParticles equally in a box in the left lower corner of the domain
     double dx = discretization_->dx();
@@ -488,10 +490,20 @@ void Computation::generateDam(int noParticles)
         //for (int j=0; j<int(settings_.nCells[1]); j++)
         for (int j=0; j<int(settings_.nCells[1])/5; j++)
         {
-            for (int k=0; k<noParticles; k++)
-            {
-                particlesX_.push_back(i*dx + k*dx/noParticles);
-                particlesY_.push_back(j*dy + k*dy/noParticles);
+            if ((i <= int(settings_.nCells[0]/2 + 5)) && (i >= int(settings_.nCells[0]/2 - 5)) && (j <= int(settings_.nCells[1]/5)) && (j >= int(settings_.nCells[1]/5 - 6))){
+
+                    for (int k=0; k<noParticlesFountain; k++)
+                    {
+                        particlesX_.push_back(i*dx + k*dx/noParticlesFountain);
+                        particlesY_.push_back(j*dy + k*dy/noParticlesFountain);
+                    }
+                }
+            else {
+                for (int k=0; k<noParticles; k++)
+                {
+                    particlesX_.push_back(i*dx + k*dx/noParticles);
+                    particlesY_.push_back(j*dy + k*dy/noParticles);
+                }
             }
         }
     }
@@ -1337,7 +1349,16 @@ void Computation::resetEmptyEdges()
 
 void Computation::setFountainVelocity()
 {
-    discretization_->v(int(settings_.nCells[0]/2), int(settings_.nCells[1]/5 - 1)) = 6;
-    discretization_->v(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 1)) = 6;
-    discretization_->v(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 1)) = 6;
+    discretization_->v(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 2)) = 2;
+    discretization_->v(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 2)) = 2;
+    
+    discretization_->v(int(settings_.nCells[0]/2), int(settings_.nCells[1]/5 - 3)) = 2;
+
+    discretization_->v(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 4)) = 2;
+    discretization_->v(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 4)) = 2;
+
+    discretization_->v(int(settings_.nCells[0]/2), int(settings_.nCells[1]/5 - 5)) = 2;
+
+    discretization_->v(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 6)) = 2;
+    discretization_->v(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 6)) = 2;
 }
