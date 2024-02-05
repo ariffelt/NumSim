@@ -129,26 +129,36 @@ void Computation::runSimulation()
         
         outputWriterText_->writeFile(t);
 
+        resetEmptyEdges();
+
         updateSurfacePs_ = false;
 
         freeflowBC(); // apply free flow boundary conditions
 
         applyBoundaryValues(); // set boundary values for u, v, F and G
 
-        std::cout << "vor updateParticleVelocities" << std::endl;
+        // std::cout << "vor updateParticleVelocities" << std::endl;
 
         computeParticleVelocities();
 
-        std::cout << "nach updateParticleVelocities" << std::endl;
+        // std::cout << "nach updateParticleVelocities" << std::endl;
 
         updateMarkerField(); 
+
+        // std::cout << "nach updateMarkerfield" << std::endl;
+
+        resetEmptyEdges();
 
         updateSurfacePs_ = true;
 
         freeflowBC(); // apply free flow boundary conditions
 
+        std::cout << "nach freeFlowBC" << std::endl;
+
         outputWriterParaview_->writeFile(t); // output simulation results
         outputWriterText_->writeFile(t);
+
+        std::cout << "nach Outputwriter" << std::endl;
 
         if (t >= timestepInterval)
         {
@@ -427,7 +437,7 @@ void Computation::generateVirtualParticles()
     // todo: remove hardcoding
     if (settings_.particelShape == "DAM")
     {
-        generateDam(5);
+        generateDam(10);
     }
     else if (settings_.particelShape == "FULL")
     {
@@ -473,8 +483,11 @@ void Computation::generateDam(int noParticles)
     {
         for (int j=0; j<int(settings_.nCells[1]); j++)
         {
-            particlesX_.push_back(i*dx);
-            particlesY_.push_back(j*dy);
+            for (int k=0; k<noParticles; k++)
+            {
+                particlesX_.push_back(i*dx + k*dx/noParticles);
+                particlesY_.push_back(j*dy + k*dy/noParticles);
+            }
         }
     }
 }
@@ -1290,5 +1303,26 @@ void Computation::dropBC(int i, int j)
     {
         discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
         discretization_->v(i-1,j) = discretization_->v(i,j);
+    }
+}
+
+void Computation::resetEmptyEdges()
+{
+    for (int i = 1; i < discretization_->rhsSize()[0] - 1; i++)
+    {
+        for (int j = 1; j < discretization_->rhsSize()[1] - 1; j++)
+        {
+            if (discretization_->markerfield(i, j) == 0)
+            {
+                if (discretization_->markerfield(i + 1, j) == 0)
+                {
+                    discretization_->u(i, j) = 0;
+                }
+                if (discretization_->markerfield(i, j + 1) == 0)
+                {
+                    discretization_->v(i, j) = 0;
+                }
+            }
+        }
     }
 }

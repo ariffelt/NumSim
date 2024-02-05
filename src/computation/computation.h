@@ -98,6 +98,8 @@ private:
     void dropBC(int i, int j);
 
     void printParticles();
+
+    void resetEmptyEdges();
     
 
 
