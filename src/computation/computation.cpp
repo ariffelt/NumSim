@@ -138,10 +138,10 @@ void Computation::runSimulation()
 
         freeflowBC(); // apply free flow boundary conditions
 
-        updateSurfacePs_ = true;
-        updateSurfaceVelocities_ = false;
+        //updateSurfacePs_ = true;
+        //updateSurfaceVelocities_ = false;
 
-        freeflowBC(); // apply free flow boundary conditions
+        //freeflowBC(); // apply free flow boundary conditions
 
         outputWriterText_->writeFile(t);
 
@@ -1071,12 +1071,12 @@ void Computation::tipFromRightBC(int i, int j)
     // std::cout << "tip from right ( "<<i<<", "<<j<<"); ";
     if (updateSurfaceVelocities_)
     {
+        // mass balance
+        discretization_->u(i-1,j) = discretization_->u(i,j) + discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
+
         // external forces
         discretization_->v(i,j) = discretization_->v(i,j) + dt_ * settings_.g[1];
         discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
-
-        // mass balance
-        discretization_->u(i-1,j) = discretization_->u(i,j) + discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
                                     
         // mass balance + tangential stress
         if (discretization_->markerfield(i-1,j+1) == 0)
@@ -1198,12 +1198,12 @@ void Computation::tipFromTopBC(int i, int j)
     // std::cout << "tip from top ( "<<i<<", "<<j<<"); ";
     if (updateSurfaceVelocities_)
     {
+        // mass balance
+        discretization_->v(i,j-1) = discretization_->v(i,j) + discretization_->dy() / discretization_->dx() * (discretization_->u(i,j) - discretization_->u(i-1,j));
+
         // external forces
         discretization_->u(i,j) = discretization_->u(i,j) + dt_ * settings_.g[0];
         discretization_->u(i-1,j) = discretization_->u(i-1,j) + dt_ * settings_.g[0];
-
-        // mass balance
-        discretization_->v(i,j-1) = discretization_->v(i,j) + discretization_->dy() / discretization_->dx() * (discretization_->u(i,j) - discretization_->u(i-1,j));
 
         // mass balance + tangential stress
         if (discretization_->markerfield(i-1,j-1) == 0)
@@ -1272,14 +1272,12 @@ void Computation::tipFromLeftBC(int i, int j)
     // std::cout << "tip from left ( "<<i<<", "<<j<<"); ";
     if (updateSurfaceVelocities_)
     {
+        // mass balance
+        discretization_->u(i,j) = discretization_->u(i-1,j) - discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
+
         // external forces
         discretization_->v(i,j) = discretization_->v(i,j) + dt_ * settings_.g[1];
         discretization_->v(i,j-1) = discretization_->v(i,j-1) + dt_ * settings_.g[1];
-
-        
-
-        // mass balance
-        discretization_->u(i,j) = discretization_->u(i-1,j) - discretization_->dx() / discretization_->dy() * (discretization_->v(i,j) - discretization_->v(i,j-1));
 
         // mass balance + tangential stress
         if (discretization_->markerfield(i+1,j+1) == 0)
@@ -1320,12 +1318,12 @@ void Computation::tipFromBottomBC(int i, int j)
     //std::cout << "tip from bottom ( "<<i<<", "<<j<<"); ";
     if (updateSurfaceVelocities_)
     {
+        // mass balance
+        discretization_->v(i,j) = discretization_->v(i,j-1) - discretization_->dy() / discretization_->dx() * (discretization_->u(i,j) - discretization_->u(i-1,j));
+        
         // external forces
         discretization_->u(i,j) = discretization_->u(i,j) + dt_ * settings_.g[0];
         discretization_->u(i-1,j) = discretization_->u(i-1,j) + dt_ * settings_.g[0];
-
-        // mass balance
-        discretization_->v(i,j) = discretization_->v(i,j-1) - discretization_->dy() / discretization_->dx() * (discretization_->u(i,j) - discretization_->u(i-1,j));
 
         // mass balance + tangential stress
         if (discretization_->markerfield(i+1,j+1) == 0)
