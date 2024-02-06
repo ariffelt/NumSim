@@ -101,7 +101,7 @@ void Computation::runSimulation()
     updateMarkerField();
 
     outputWriterParaview_->writeFile(t); // output initial state
-    outputWriterText_->writeFile(t);/home/ariffelt/NumSim/src/discretization
+    outputWriterText_->writeFile(t);
 
     // std::cout << "updated marker field" << std::endl;
 
@@ -452,7 +452,7 @@ void Computation::generateVirtualParticles()
     // todo: remove hardcoding
     if (settings_.particelShape == "DAM")
     {
-        generateDam(10);
+        generateDam(16);
     }
     else if (settings_.particelShape == "FULL")
     {
@@ -1020,7 +1020,7 @@ void Computation::topLeftCornerBC(int i, int j)
     // normal stress
     if (updateSurfacePs_)
     {
-        discretization_->p(i,j) = - 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j) - discretization_->u(i-1,j) - discretization_->u(i,j-1) - discretization_->u(i-1,j-1)) / (discretization_->dy()) +
+        discretization_->p(i,j) = - 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j) + discretization_->u(i-1,j) - discretization_->u(i,j-1) - discretization_->u(i-1,j-1)) / (discretization_->dy()) +
                                                                 (discretization_->v(i+1,j) + discretization_->v(i+1,j-1) - discretization_->v(i,j) - discretization_->v(i,j-1)) / (discretization_->dx()));
     }
 }
@@ -1049,11 +1049,7 @@ void Computation::tipFromRightBC(int i, int j)
         }
         if (discretization_->markerfield(i-1,j-1) == 0)
         {
-        discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
-        discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
-        discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
             discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
-        discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
             discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
         }
     }
@@ -1176,10 +1172,6 @@ void Computation::tipFromTopBC(int i, int j)
         if (discretization_->markerfield(i-1,j-1) == 0)
         {
             discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
-            discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
-            discretization_->u(i,j-1) = discretization_->u(i,j);
-            discretization_->u(i-1,j-1) = discretization_->u(i-1,j);
-            discretization_->u(i,j-1) = discretization_->u(i,j);
             discretization_->v(i-1,j-1) = discretization_->v(i,j-1);
         }
         if (discretization_->markerfield(i+1,j-1) == 0)
@@ -1261,10 +1253,6 @@ void Computation::tipFromLeftBC(int i, int j)
         if (discretization_->markerfield(i+1,j-1) == 0)
         {
             discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
-            discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
-            discretization_->u(i,j+1) = discretization_->u(i,j);
-            discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
-            discretization_->u(i,j+1) = discretization_->u(i,j);
             discretization_->u(i,j-1) = discretization_->u(i,j);
         }
 
@@ -1311,10 +1299,6 @@ void Computation::tipFromBottomBC(int i, int j)
         if (discretization_->markerfield(i-1,j+1) == 0)
         {
             discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
-            discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
-            discretization_->u(i,j+1) = discretization_->u(i,j);
-            discretization_->u(i-1,j+1) = discretization_->u(i-1,j);
-            discretization_->u(i,j+1) = discretization_->u(i,j);
             discretization_->v(i-1,j) = discretization_->v(i,j);
         }
 
@@ -1362,12 +1346,6 @@ void Computation::dropBC(int i, int j)
         if (discretization_->markerfield(i+1,j-1) == 0)
         {
             discretization_->u(i,j-1) = discretization_->u(i,j);
-            discretization_->u(i,j-1) = discretization_->u(i,j);
-            discretization_->v(i+1,j) = discretization_->v(i,j);
-            discretization_->v(i-1,j) = discretization_->v(i,j);
-            discretization_->u(i,j-1) = discretization_->u(i,j);
-            discretization_->v(i+1,j) = discretization_->v(i,j);
-            discretization_->v(i-1,j) = discretization_->v(i,j);
             discretization_->v(i+1,j-1) = discretization_->v(i,j-1);
         }
         if (discretization_->markerfield(i-1,j-1) == 0)

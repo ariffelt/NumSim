@@ -24,6 +24,7 @@ PressureSolver::PressureSolver(std::shared_ptr<Discretization> discretization,
 double PressureSolver::getResidual()
 {
     double res = 0;
+    double count = 0;
     const double hx2 = discretization_->dx() * discretization_->dx();
     const double hy2 = discretization_->dy() * discretization_->dy();
 
@@ -39,11 +40,14 @@ double PressureSolver::getResidual()
                 double d2pdy2 = (discretization_->p(i, j - 1) - 2.0 * discretization_->p(i, j) + discretization_->p(i, j + 1)) / (hy2);
                 // compute squared residual
                 res += (d2pdx2 + d2pdy2 - discretization_->rhs(i, j)) * (d2pdx2 + d2pdy2 - discretization_->rhs(i, j));
+                // count the number of relevant fluid cells
+                count++;
             }
         }
     }
 
-    return res / (discretization_->nCells()[0] * discretization_->nCells()[1]);
+    //return res / (discretization_->nCells()[0] * discretization_->nCells()[1]);
+    return res / count;
 }
 
 /**
