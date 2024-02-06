@@ -454,9 +454,7 @@ void Computation::generateVirtualParticles()
     // todo: remove hardcoding
     if (settings_.particelShape == "DAM")
     {
-        generateDam(10, 100);
-        //generateDam(10, 10);
-        
+        generateDam(10);
     }
     else if (settings_.particelShape == "FULL")
     {
@@ -482,6 +480,10 @@ void Computation::generateVirtualParticles()
     {
         generateDropInWater(10);
     }
+    else if(settings_.particelShape =="FOUNTAIN")
+    {
+        generateFountain(10, 100);
+    }
     else
     {
     particlesX_ = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0,1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1,1.1,1.1};	
@@ -489,40 +491,26 @@ void Computation::generateVirtualParticles()
     }
 }
 
-void Computation::generateDam(int noParticles, int noParticlesFountain)
+void Computation::generateDam(int noParticles)
 {
     // Distribute the noParticles equally in a box in the left lower corner of the domain
     double dx = discretization_->dx();
     double dy = discretization_->dy();
-
     particlesX_ = {};
     particlesY_ = {};
-
-    // for (int i=int(settings_.nCells[1]/4); i<int(3*settings_.nCells[1]/4); i++)
-    for (int i=int(0); i<int(settings_.nCells[0]); i++)
-
+    for (int i=int(settings_.nCells[1]/4); i<int(3*settings_.nCells[1]/4); i++)
     {
-        //for (int j=0; j<int(settings_.nCells[1]); j++)
-        for (int j=0; j<int(settings_.nCells[1])/5; j++)
+        for (int j=0; j<int(settings_.nCells[1]) - 3; j++)
         {
-            if ((i <= int(settings_.nCells[0]/2 + 5)) && (i >= int(settings_.nCells[0]/2 - 5)) && (j <= int(settings_.nCells[1]/5)) && (j >= int(settings_.nCells[1]/5 - 6))){
-
-                    for (int k=0; k<noParticlesFountain; k++)
-                    {
-                        particlesX_.push_back(i*dx + k*dx/noParticlesFountain);
-                        particlesY_.push_back(j*dy + k*dy/noParticlesFountain);
-                    }
-                }
-            else {
-                for (int k=0; k<noParticles; k++)
-                {
-                    particlesX_.push_back(i*dx + k*dx/noParticles);
-                    particlesY_.push_back(j*dy + k*dy/noParticles);
-                }
+            for (int k=0; k<noParticles; k++)
+            {
+                particlesX_.push_back(i*dx + k*dx/noParticles);
+                particlesY_.push_back(j*dy + k*dy/noParticles);
             }
         }
     }
 }
+
 
 void Computation::generateBox(int noParticles)
 {
@@ -635,61 +623,93 @@ void Computation::generateDropInWater(int noParticles)
         }
     }
 }
+
+void Computation::generateFountain(int noParticles, int noParticlesFountain)
+{
+    // Distribute the noParticles equally in a box in the left lower corner of the domain
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
+
+    particlesX_ = {};
+    particlesY_ = {};
+
+    for (int i=int(0); i<int(settings_.nCells[0]); i++)
+    {
+        for (int j=0; j<int(settings_.nCells[1])/5; j++)
+        {
+            if ((i <= int(settings_.nCells[0]/2 + 5)) && (i >= int(settings_.nCells[0]/2 - 5)) && (j <= int(settings_.nCells[1]/5)) && (j >= int(settings_.nCells[1]/5 - 6))){
+
+                    for (int k=0; k<noParticlesFountain; k++)
+                    {
+                        particlesX_.push_back(i*dx + k*dx/noParticlesFountain);
+                        particlesY_.push_back(j*dy + k*dy/noParticlesFountain);
+                    }
+                }
+            else {
+                for (int k=0; k<noParticles; k++)
+                {
+                    particlesX_.push_back(i*dx + k*dx/noParticles);
+                    particlesY_.push_back(j*dy + k*dy/noParticles);
+                }
+            }
+        }
+    }
+}
 /**
  * Compute the new particle velocities.
  * And move particles according to these.
  */
 void Computation::computeParticleVelocities()
 {
-    // double dx = discretization_->dx();
-    // double dy = discretization_->dy();
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
 
     // interpolate velocities to the particle positions (do not coincide with velocity grid points)
     for (int k = 0; k < particlesX_.size(); k++)
     {
-    //     // compute particle velocity in x direction
+        // compute particle velocity in x direction
 
-    //     // index of upper right corner
-    //     int iUpperRight = int(particlesX_[k] / dx + 1);
-    //     int jUpperRight = int((particlesY_[k] + 1 / 2) / dy + 1);
+        // index of upper right corner
+        int iUpperRight = int(particlesX_[k] / dx + 1);
+        int jUpperRight = int((particlesY_[k] + 1 / 2) / dy + 1);
 
-    //     // position of 4 neighbouring grid points with values u
-    //     double x1 = (iUpperRight - 1) * dx;
-    //     double x2 = iUpperRight * dx;
-    //     double y1 = (jUpperRight - 1) * dy - dy / 2;
-    //     double y2 = jUpperRight * dy - dy / 2;
+        // position of 4 neighbouring grid points with values u
+        double x1 = (iUpperRight - 1) * dx;
+        double x2 = iUpperRight * dx;
+        double y1 = (jUpperRight - 1) * dy - dy / 2;
+        double y2 = jUpperRight * dy - dy / 2;
 
 
 
-    //     // bilinear interpolation
-    //     double u = 1 / (dx * dy) * ((x2 - particlesX_[k]) * (y2 - particlesY_[k]) * discretization_->u(iUpperRight - 1, jUpperRight - 1) 
-    //                                 + (particlesX_[k] - x1) * (y2 - particlesY_[k]) * discretization_->u(iUpperRight, jUpperRight - 1) 
-    //                                 + (x2 - particlesX_[k]) * (particlesY_[k] - y1) * discretization_->u(iUpperRight - 1, jUpperRight) 
-    //                                 + (particlesX_[k] - x1) * (particlesY_[k] - y1) * discretization_->u(iUpperRight, jUpperRight));
+        // bilinear interpolation
+        double u = 1 / (dx * dy) * ((x2 - particlesX_[k]) * (y2 - particlesY_[k]) * discretization_->u(iUpperRight - 1, jUpperRight - 1) 
+                                    + (particlesX_[k] - x1) * (y2 - particlesY_[k]) * discretization_->u(iUpperRight, jUpperRight - 1) 
+                                    + (x2 - particlesX_[k]) * (particlesY_[k] - y1) * discretization_->u(iUpperRight - 1, jUpperRight) 
+                                    + (particlesX_[k] - x1) * (particlesY_[k] - y1) * discretization_->u(iUpperRight, jUpperRight));
 
-    //     // compute particle velocity in y direction
-    //     // index of upper right corner
-    //     iUpperRight = int((particlesX_[k] + 1 / 2) / dx + 1);
-    //     jUpperRight = int(particlesY_[k] / dy + 1);
+        // compute particle velocity in y direction
+        // index of upper right corner
+        iUpperRight = int((particlesX_[k] + 1 / 2) / dx + 1);
+        jUpperRight = int(particlesY_[k] / dy + 1);
 
-    //     // position of 4 neighbouring grid points with values v
-    //     x1 = (iUpperRight - 1) * dx - dx / 2;
-    //     x2 = iUpperRight * dx - dx / 2;
-    //     y1 = (jUpperRight - 1) * dy;
-    //     y2 = jUpperRight * dy;
+        // position of 4 neighbouring grid points with values v
+        x1 = (iUpperRight - 1) * dx - dx / 2;
+        x2 = iUpperRight * dx - dx / 2;
+        y1 = (jUpperRight - 1) * dy;
+        y2 = jUpperRight * dy;
 
-    //     // bilinear interpolation
-    //     double v = 1 / (dx * dy) * ((x2 - particlesX_[k]) * (y2 - particlesY_[k]) * discretization_->v(iUpperRight - 1, jUpperRight - 1) 
-    //                                 + (particlesX_[k] - x1) * (y2 - particlesY_[k]) * discretization_->v(iUpperRight, jUpperRight - 1) 
-    //                                 + (x2 - particlesX_[k]) * (particlesY_[k] - y1) * discretization_->v(iUpperRight - 1, jUpperRight) 
-    //                                 + (particlesX_[k] - x1) * (particlesY_[k] - y1) * discretization_->v(iUpperRight, jUpperRight));
+        // bilinear interpolation
+        double v = 1 / (dx * dy) * ((x2 - particlesX_[k]) * (y2 - particlesY_[k]) * discretization_->v(iUpperRight - 1, jUpperRight - 1) 
+                                    + (particlesX_[k] - x1) * (y2 - particlesY_[k]) * discretization_->v(iUpperRight, jUpperRight - 1) 
+                                    + (x2 - particlesX_[k]) * (particlesY_[k] - y1) * discretization_->v(iUpperRight - 1, jUpperRight) 
+                                    + (particlesX_[k] - x1) * (particlesY_[k] - y1) * discretization_->v(iUpperRight, jUpperRight));
 
-    //     particlesX_[k] += dt_ * u;
-    //     particlesY_[k] += dt_ * v;
+        particlesX_[k] += dt_ * u;
+        particlesY_[k] += dt_ * v;
 
     // move particle
-    particlesX_[k] += dt_ * discretization_->u().interpolateAt(particlesX_[k], particlesY_[k]);
-    particlesY_[k] += dt_ * discretization_->v().interpolateAt(particlesX_[k], particlesY_[k]);
+    // particlesX_[k] += dt_ * discretization_->u().interpolateAt(particlesX_[k], particlesY_[k]);
+    // particlesY_[k] += dt_ * discretization_->v().interpolateAt(particlesX_[k], particlesY_[k]);
     }
 
     // std::cout << "Particle velocities computed" << std::endl;

@@ -49,7 +49,7 @@ private:
 
     void computeParticleVelocities();
 
-    void generateDam(int noParticles, int noParticlesFountain);
+    void generateDam(int noParticles);
 
     void generateFull(int noParticles);
 
@@ -62,6 +62,8 @@ private:
     void generateBar(int noParticles);
 
     void generateDropInWater(int noParticles);  
+
+    void generateFountain(int noParticles, int noParticlesFountain);
 
     // void updateCellTypes();
 
