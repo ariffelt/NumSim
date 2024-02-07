@@ -52,13 +52,10 @@ void SOR::solve()
         {
             for (int j = discretization_->pJBegin() + 1; j < discretization_->pJEnd(); j++)
             {
-                if (discretization_->isInnerFluidCell(i, j))
-                {
-                    double px = (discretization_->p(i - 1, j) + discretization_->p(i + 1, j)) / (hx2);
-                    double py = (discretization_->p(i, j - 1) + discretization_->p(i, j + 1)) / (hy2);
+                double px = (discretization_->p(i - 1, j) + discretization_->p(i + 1, j)) / (hx2);
+                double py = (discretization_->p(i, j - 1) + discretization_->p(i, j + 1)) / (hy2);
 
-                    discretization_->p(i, j) = (1 - omega_) * discretization_->p(i, j) + omega_ * prefactor * (px + py - discretization_->rhs(i, j));
-                }
+                discretization_->p(i, j) = (1 - omega_) * discretization_->p(i, j) + omega_ * prefactor * (px + py - discretization_->rhs(i, j));
             }
         }
 
