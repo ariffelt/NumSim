@@ -11,8 +11,8 @@
  * @param alpha donor cell weight parameter
  * @param gamma donor cell weight parameter for temperature
 */
-
-DonorCell::DonorCell(std::array<int, 2> nCells, std::array<double, 2> meshWidth, double alpha, double gamma) : Discretization(nCells, meshWidth), alpha_(alpha), gamma_(gamma)
+DonorCell::DonorCell(const std::shared_ptr<Partitioning> partitioning, std::array<double, 2> meshWidth, double alpha, double gamma) : 
+Discretization(partitioning, meshWidth), alpha_(alpha), gamma_(gamma)
 {
 }
 
