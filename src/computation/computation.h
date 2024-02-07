@@ -51,9 +51,15 @@ private:
 
     void generateFountain(int noParticles, int noParticlesFountain);
 
+    void generateFountainWithTemp(int noParticles, int noParticlesFountain);
+
+    void generateFountainWithTempUp(int noParticles, int noParticlesFountain);
+
     void setFountainVelocity();
 
     void setFountainTemperature();
+
+    void setFountainTemperatureUp();
 
     void generateFull(int noParticles);
 

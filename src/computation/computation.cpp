@@ -53,9 +53,6 @@ void Computation::initialize(int argc, char *argv[])
     // set markers for the fixed boundary conditions
     setBoundaryMarkers();
 
-    // set fountain temperature
-    setFountainTemperature();
-
     // initialize output writers
     outputWriterText_ = std::make_unique<OutputWriterText>(discretization_);
     outputWriterParaview_ = std::make_unique<OutputWriterParaview>(discretization_);
@@ -111,6 +108,11 @@ void Computation::runSimulation()
     while (t < settings_.endTime)
     {
         setFountainVelocity(); // set the velocity of the fountain
+
+        if (settings_.particelShape =="FOUNTAINWITHTEMPUP")
+        {
+            setFountainTemperatureUp(); // set the temperature of the fountain
+        }
 
         applyBoundaryValues(); // set boundary values for u, v, F and G
 
@@ -529,6 +531,14 @@ void Computation::generateVirtualParticles()
     {
         generateFountain(10, 100);
     }
+    else if(settings_.particelShape =="FOUNTAINWITHTEMP")
+    {
+        generateFountainWithTemp(10, 100);
+    }
+    else if(settings_.particelShape =="FOUNTAINWITHTEMPUP")
+    {
+        generateFountainWithTempUp(10, 100);
+    }
     else
     {
     particlesX_ = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0,1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1,1.1,1.1};	
@@ -593,6 +603,77 @@ void Computation::generateFountain(int noParticles, int noParticlesFountain)
     }
 }
 
+void Computation::generateFountainWithTemp(int noParticles, int noParticlesFountain)
+{
+    setFountainTemperature();
+    // Distribute the noParticles equally in a box in the left lower corner of the domain
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
+
+    particlesX_ = {};
+    particlesY_ = {};
+
+    // for (int i=int(settings_.nCells[1]/4); i<int(3*settings_.nCells[1]/4); i++)
+    for (int i=int(0); i<int(settings_.nCells[0]); i++)
+
+    {
+        //for (int j=0; j<int(settings_.nCells[1]); j++)
+        for (int j=0; j<int(settings_.nCells[1])/5; j++)
+        {
+            if ((i <= int(settings_.nCells[0]/2 + 5)) && (i >= int(settings_.nCells[0]/2 - 5)) && (j <= int(settings_.nCells[1]/5)) && (j >= int(settings_.nCells[1]/5 - 6))){
+
+                    for (int k=0; k<noParticlesFountain; k++)
+                    {
+                        particlesX_.push_back(i*dx + k*dx/noParticlesFountain);
+                        particlesY_.push_back(j*dy + k*dy/noParticlesFountain);
+                    }
+                }
+            else {
+                for (int k=0; k<noParticles; k++)
+                {
+                    particlesX_.push_back(i*dx + k*dx/noParticles);
+                    particlesY_.push_back(j*dy + k*dy/noParticles);
+                }
+            }
+        }
+    }
+}
+
+void Computation::generateFountainWithTempUp(int noParticles, int noParticlesFountain)
+{
+    // Distribute the noParticles equally in a box in the left lower corner of the domain
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
+
+    particlesX_ = {};
+    particlesY_ = {};
+
+    // for (int i=int(settings_.nCells[1]/4); i<int(3*settings_.nCells[1]/4); i++)
+    for (int i=int(0); i<int(settings_.nCells[0]); i++)
+
+    {
+        //for (int j=0; j<int(settings_.nCells[1]); j++)
+        for (int j=0; j<int(settings_.nCells[1])/5; j++)
+        {
+            if ((i <= int(settings_.nCells[0]/2 + 5)) && (i >= int(settings_.nCells[0]/2 - 5)) && (j <= int(settings_.nCells[1]/5)) && (j >= int(settings_.nCells[1]/5 - 6))){
+
+                    for (int k=0; k<noParticlesFountain; k++)
+                    {
+                        particlesX_.push_back(i*dx + k*dx/noParticlesFountain);
+                        particlesY_.push_back(j*dy + k*dy/noParticlesFountain);
+                    }
+                }
+            else {
+                for (int k=0; k<noParticles; k++)
+                {
+                    particlesX_.push_back(i*dx + k*dx/noParticles);
+                    particlesY_.push_back(j*dy + k*dy/noParticles);
+                }
+            }
+        }
+    }
+}
+
 void Computation::setFountainVelocity()
 {
     discretization_->v(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 2)) = 2;
@@ -623,6 +704,35 @@ void Computation::setFountainTemperature()
 
     discretization_->q(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 6)) = 2;
     discretization_->q(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 6)) = 2;
+}
+
+void Computation::setFountainTemperatureUp()
+{
+    int maxHeight = 0;
+    for (int j = 1; j < int(settings_.nCells[1]) - 1; j++)
+    {
+       if (discretization_->isInnerFluidCell(int(settings_.nCells[0]/2), j))
+       {
+           maxHeight = j;
+       }
+    }
+    // discretization_->q(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 2)) = 2;
+    // discretization_->q(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 2)) = 2;
+
+    discretization_->q(int(settings_.nCells[0]/2), maxHeight) = 2;
+    discretization_->q(int(settings_.nCells[0]/2), maxHeight+1) = 2;
+    discretization_->q(int(settings_.nCells[0]/2), maxHeight-1) = 2;
+    discretization_->q(int(settings_.nCells[0]/2 + 1), maxHeight) = 2;
+    discretization_->q(int(settings_.nCells[0]/2 - 1), maxHeight) = 2;
+    
+
+    // discretization_->q(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 4)) = 2;
+    // discretization_->q(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 4)) = 2;
+
+    // discretization_->q(int(settings_.nCells[0]/2), int(settings_.nCells[1]/5 - 5)) = 2;
+
+    // discretization_->q(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 6)) = 2;
+    // discretization_->q(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 6)) = 2;
 }
 
 void Computation::generateBox(int noParticles)
