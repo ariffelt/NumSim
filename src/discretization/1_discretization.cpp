@@ -4,11 +4,10 @@
 
 /**
  * Constructor
- * @param partitioning partitioning of the grid
  * @param nCells number of cells in x and y direction
  * @param meshWidth mesh width in x and y direction
  */
-Discretization::Discretization(const std::shared_ptr<Partitioning> partitioning, std::array<double, 2> meshWidth) : StaggeredGrid(partitioning, meshWidth)
+Discretization::Discretization(std::array<int, 2> nCells, std::array<double, 2> meshWidth) : StaggeredGrid(nCells, meshWidth)
 {
 }
 
@@ -74,5 +73,4 @@ double Discretization::computeD2tDx2(int i, int j) const
 double Discretization::computeD2tDy2(int i, int j) const
 {
     return (t(i, j + 1) - 2.0 * t(i, j) + t(i, j - 1)) / (dy() * dy());
-
 }

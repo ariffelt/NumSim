@@ -24,7 +24,7 @@ public:
     //! set the boundary markers for the cells
     void setBoundaryMarkers();
 
-protected:
+private:
     //! compute the time step width dt from maximum velocities
     void computeTimeStepWidth();
 
@@ -114,14 +114,11 @@ protected:
     void resetEmptyEdges();
 
     //! compute new temperature t from the old temperature t_old and the velocities u and v
-
     void computeTemperature();
 
     Settings settings_;
 
     std::shared_ptr<Discretization> discretization_;
-
-    std::shared_ptr<Partitioning> partitioning_;
 
     std::unique_ptr<PressureSolver> pressureSolver_;
 

@@ -1,15 +1,12 @@
 cmake_minimum_required(VERSION 3.8)
 
 # Define the project name.
-project(numsim_parallel)
+project(numsim)
 
 # Specify the name of the executable (${PROJECT_NAME} which is equal to what was set in the project() command).
 # Also specify the source files.
 set(PROJECT_FILES
-    partitioning/partitioning.cpp    
-
     computation/computation.cpp  
-    computation/computation_parallel.cpp  
     
     discretization/0_staggered_grid.cpp
     discretization/1_discretization.cpp
@@ -18,41 +15,21 @@ set(PROJECT_FILES
 
     output_writer/output_writer.cpp
     output_writer/output_writer_text.cpp
-    output_writer/output_writer_text_parallel.cpp
     output_writer/output_writer_paraview.cpp
-    output_writer/output_writer_paraview_parallel.cpp
 
     pressure_solver/pressure_solver.cpp
     pressure_solver/gauss_seidel.cpp
     pressure_solver/sor.cpp
-    pressure_solver/pressure_solver_parallel.cpp
-    pressure_solver/red_black_sor.cpp
 
     settings/settings.cpp
 
     storage/array2d.cpp
-
     storage/fieldvariable.cpp
 
     freeflow/virtualparticle.cpp
 )
 
 add_executable(${PROJECT_NAME} main.cpp ${PROJECT_FILES})
-
-find_package(MPI REQUIRED)
-
-include_directories(${MPI_INCLUDE_PATH})
-target_link_libraries(${PROJECT_NAME} ${MPI_LIBRARIES})
-
-if(MPI_COMPILE_FLAGS)
-  set_target_properties(${PROJECT_NAME} PROPERTIES
-    COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
-endif()
-
-if(MPI_LINK_FLAGS)
-  set_target_properties(${PROJECT_NAME} PROPERTIES
-    LINK_FLAGS "${MPI_LINK_FLAGS}")
-endif()
 
 # Add the project directory to include directories, to be able to include all project header files from anywhere
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR})

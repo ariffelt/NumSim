@@ -1,7 +1,6 @@
 #pragma once
 
 #include "output_writer/output_writer.h"
-#include "discretization/1_discretization.h"
 
 #include <vtkSmartPointer.h>
 #include <vtkXMLImageDataWriter.h>
@@ -18,6 +17,7 @@ class OutputWriterParaview :
 {
 public:
   //! constructor
+  //! @param discretization shared pointer to the discretization object that will contain all the data to be written to the file
   OutputWriterParaview(std::shared_ptr<Discretization> discretization);
 
   //! write current velocities to file, filename is output_<count>.vti

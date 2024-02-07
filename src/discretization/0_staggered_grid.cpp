@@ -3,12 +3,9 @@
 #include <cassert>
 #include <iostream>
 
-#include <memory>
-
 /**
  * Constructor of staggered grid.
  * Provides several parameters for the staggered grid.
- * @param partitioning partitioning of the grid
  * @param nCells number of cells in each coordinate direction
  * @param meshWidth mesh width in each coordinate direction
 */
@@ -26,14 +23,13 @@ StaggeredGrid::StaggeredGrid(std::array<int, 2> nCells, std::array<double, 2> me
 {
     assert(nCells[0] > 0);
     assert(nCells[1] > 0);
-
     assert(meshWidth[0] > 0);
     assert(meshWidth[1] > 0);
 }
 
 /**
  * get the mesh width, i.e. the length of a single cell in x and y direction
- */
+*/
 const std::array<double, 2> StaggeredGrid::meshWidth() const
 {
     return meshWidth_;
@@ -41,7 +37,7 @@ const std::array<double, 2> StaggeredGrid::meshWidth() const
 
 /**
  * get the number of cells in each coordinate direction
- */
+*/
 const std::array<int, 2> StaggeredGrid::nCells() const
 {
     return nCells_;
@@ -49,7 +45,7 @@ const std::array<int, 2> StaggeredGrid::nCells() const
 
 /**
  * get a reference to field variable u
- */
+*/
 const FieldVariable &StaggeredGrid::u() const
 {
     return u_;
@@ -57,7 +53,7 @@ const FieldVariable &StaggeredGrid::u() const
 
 /**
  * get a reference to field variable v
- */
+*/
 const FieldVariable &StaggeredGrid::v() const
 {
     return v_;
@@ -65,7 +61,7 @@ const FieldVariable &StaggeredGrid::v() const
 
 /**
  * get a reference to field variable p
- */
+*/
 const FieldVariable &StaggeredGrid::p() const
 {
     return p_;
@@ -81,7 +77,7 @@ const FieldVariable &StaggeredGrid::t() const
 
 /**
  * access value of u in element (i,j)
- */
+*/
 double StaggeredGrid::u(int i, int j) const
 {
     return u_(i, j);
@@ -89,7 +85,7 @@ double StaggeredGrid::u(int i, int j) const
 
 /**
  * access value of u in element (x,y)
- */
+*/
 double &StaggeredGrid::u(int i, int j)
 {
     return u_(i, j);
@@ -97,7 +93,7 @@ double &StaggeredGrid::u(int i, int j)
 
 /**
  * access value of v in element (i,j)
- */
+*/
 double StaggeredGrid::v(int i, int j) const
 {
     return v_(i, j);
@@ -105,7 +101,7 @@ double StaggeredGrid::v(int i, int j) const
 
 /**
  * access value of v in element (x,y)
- */
+*/
 double &StaggeredGrid::v(int i, int j)
 {
     return v_(i, j);
@@ -113,7 +109,7 @@ double &StaggeredGrid::v(int i, int j)
 
 /**
  * access value of p in element (i,j)
- */
+*/
 double StaggeredGrid::p(int i, int j) const
 {
     return p_(i, j);
@@ -121,7 +117,7 @@ double StaggeredGrid::p(int i, int j) const
 
 /**
  * access value of p in element (x,y)
- */
+*/
 double &StaggeredGrid::p(int i, int j)
 {
     return p_(i, j);
@@ -145,7 +141,7 @@ double &StaggeredGrid::t(int i, int j)
 
 /**
  * access value of rhs in element (i,j)
- */
+*/
 double &StaggeredGrid::rhs(int i, int j)
 {
     return rhs_(i, j);
@@ -153,7 +149,7 @@ double &StaggeredGrid::rhs(int i, int j)
 
 /**
  * access value of F in element (i,j)
- */
+*/
 double &StaggeredGrid::f(int i, int j)
 {
     return f_(i, j);
@@ -161,7 +157,7 @@ double &StaggeredGrid::f(int i, int j)
 
 /**
  * access value of G in element (i,j)
- */
+*/
 double &StaggeredGrid::g(int i, int j)
 {
     return g_(i, j);
@@ -193,7 +189,7 @@ double &StaggeredGrid::q(int i, int j)
 
 /**
  * get the mesh width in x direction
- */
+*/
 double StaggeredGrid::dx() const
 {
     return meshWidth_[0];
@@ -201,7 +197,7 @@ double StaggeredGrid::dx() const
 
 /**
  * get the mesh width in y direction
- */
+*/
 double StaggeredGrid::dy() const
 {
     return meshWidth_[1];
@@ -209,7 +205,7 @@ double StaggeredGrid::dy() const
 
 /**
  * get first valid index for u in x direction, x-index of the left boundary cells
- */
+*/
 int StaggeredGrid::uIBegin() const
 {
     return 0;
@@ -217,7 +213,7 @@ int StaggeredGrid::uIBegin() const
 
 /**
  * get last valid index for u in x direction
- */
+*/
 int StaggeredGrid::uIEnd() const
 {
     return nCells_[0] + 1;
@@ -225,7 +221,7 @@ int StaggeredGrid::uIEnd() const
 
 /**
  * get first valid index for u in y direction
- */
+*/
 int StaggeredGrid::uJBegin() const
 {
     return 0;
@@ -233,7 +229,7 @@ int StaggeredGrid::uJBegin() const
 
 /**
  * get last valid index for u in y direction
- */
+*/
 int StaggeredGrid::uJEnd() const
 {
     return nCells_[1] + 1;
@@ -241,7 +237,7 @@ int StaggeredGrid::uJEnd() const
 
 /**
  * get the size of u
- */
+*/
 std::array<int, 2> StaggeredGrid::uSize() const
 {
     return {nCells_[0] + 2, nCells_[1] + 2};
@@ -249,7 +245,7 @@ std::array<int, 2> StaggeredGrid::uSize() const
 
 /**
  * get first valid index for v in x direction
- */
+*/
 int StaggeredGrid::vIBegin() const
 {
     return 0;
@@ -257,7 +253,7 @@ int StaggeredGrid::vIBegin() const
 
 /**
  * get last valid index for v in x direction
- */
+*/
 int StaggeredGrid::vIEnd() const
 {
     return nCells_[0] + 1;
@@ -265,7 +261,7 @@ int StaggeredGrid::vIEnd() const
 
 /**
  * get first valid index for v in y direction
- */
+*/
 int StaggeredGrid::vJBegin() const
 {
     return 0;
@@ -273,7 +269,7 @@ int StaggeredGrid::vJBegin() const
 
 /**
  * get last valid index for v in y direction
- */
+*/
 int StaggeredGrid::vJEnd() const
 {
     return nCells_[1] + 1;
@@ -281,7 +277,7 @@ int StaggeredGrid::vJEnd() const
 
 /**
  * get the size of v
- */
+*/
 std::array<int, 2> StaggeredGrid::vSize() const
 {
     return {nCells_[0] + 2, nCells_[1] + 2};
@@ -289,7 +285,7 @@ std::array<int, 2> StaggeredGrid::vSize() const
 
 /**
  * get first valid index for p in x direction
- */
+*/
 int StaggeredGrid::pIBegin() const
 {
     return 0;
@@ -297,7 +293,7 @@ int StaggeredGrid::pIBegin() const
 
 /**
  * get last valid index for p in x direction
- */
+*/
 int StaggeredGrid::pIEnd() const
 {
     return nCells_[0] + 1;
@@ -305,7 +301,7 @@ int StaggeredGrid::pIEnd() const
 
 /**
  * get first valid index for p in y direction
- */
+*/
 int StaggeredGrid::pJBegin() const
 {
     return 0;
@@ -313,7 +309,7 @@ int StaggeredGrid::pJBegin() const
 
 /**
  * get last valid index for p in y direction
- */
+*/
 int StaggeredGrid::pJEnd() const
 {
     return nCells_[1] + 1;
@@ -321,7 +317,7 @@ int StaggeredGrid::pJEnd() const
 
 /**
  * get the size of p
- */
+*/
 std::array<int, 2> StaggeredGrid::pSize() const
 {
     return {nCells_[0] + 2, nCells_[1] + 2};
@@ -368,7 +364,6 @@ std::array<int, 2> StaggeredGrid::markerfieldSize() const
 }
 
 /**
-
  * get first valid index for t in x direction
  */
 int StaggeredGrid::tIBegin() const
@@ -410,7 +405,7 @@ std::array<int, 2> StaggeredGrid::tSize() const
 
 /**
  * get the size of rhs, same as size of u,v,p
- */
+*/
 std::array<int, 2> StaggeredGrid::rhsSize() const
 {
     return {nCells_[0] + 2, nCells_[1] + 2};

@@ -19,11 +19,7 @@ public:
     //! get the value at the Cartesian coordinate (x,y). The value is linearly interpolated between stored points.
     double interpolateAt(double x, double y) const;
 
-    void setToZero();
-
-    double* data();
-
 private:
     const std::array<double, 2> origin_;    //< cartesian coordinates of the point with (i,j) = (0,0), this is different from (0,0) for the u,v and p field variables
-    const std::array<double, 2> meshWidth_; //< length of a single cell in x and y direction
+    const std::array<double, 2> meshWidth_; //< length of a single cell in x and y direction
 };
