@@ -21,6 +21,10 @@ void Computation::initialize(int argc, char *argv[])
     settings_.loadFromFile(argv[1]);
     settings_.printSettings();
 
+    // initialize partitioning
+    partitioning_ = std::make_shared<Partitioning>();
+    partitioning_->initialize(settings_.nCells);
+
     // compute the meshWidth from the physical size and the number of cells
     meshWidth_[0] = settings_.physicalSize[0] / settings_.nCells[0];
     meshWidth_[1] = settings_.physicalSize[1] / settings_.nCells[1];
@@ -32,7 +36,7 @@ void Computation::initialize(int argc, char *argv[])
     }
     else
     {
-        discretization_ = std::make_shared<CentralDifferences>(settings_.nCells, meshWidth_);
+        discretization_ = std::make_shared<CentralDifferences>(partitioning_, meshWidth_);
     }
 
     // initialize the pressure solver
@@ -227,7 +231,6 @@ void Computation::computeTimeStepWidth()
 
     // subtraction of small value to ensure dt smaller and not smaller/equal than required not necessary since we scale with security factor tau < 1
     assert(settings_.tau < 1);
-    //dt_ = std::min(settings_.tau * std::min(dt_diffusion, dt_convection), settings_.maximumDt);
     dt_ = std::min(settings_.tau * std::min(std::min(dt_diffusion, dt_diffusion_temp), dt_convection), settings_.maximumDt);
 }
 
@@ -393,6 +396,40 @@ void Computation::computeTemperature()
             }
         }
     }
+
+    // set T boundary values for bottom and top first, as for corner cases, the left and right border should be used
+    for (int i = discretization_->tIBegin(); i <= discretization_->tIEnd(); i++)
+    {
+        // T boundary values bottom, assuming inhomogenous Dirichlet conditions
+        discretization_->t(i, discretization_->tJBegin()) = 2.0 * settings_.dirichletBcBottomT - discretization_->t(i, discretization_->tJBegin() + 1);
+        // T boundary values top, assuming inhomogenous Dirichlet conditions
+        discretization_->t(i, discretization_->tJEnd()) = 2.0 * settings_.dirichletBcTopT - discretization_->t(i, discretization_->tJEnd() - 1);
+    }
+
+    // set T boundary values for left and right side
+    for (int j = discretization_->tJBegin(); j <= discretization_->tJEnd(); j++)
+    {
+        // T boundary values left, assuming inhomogenous Dirichlet conditions
+        discretization_->t(discretization_->tIBegin(), j) = settings_.dirichletBcLeftT;
+        // T boundary values right, assuming inhomogenous Dirichlet conditions
+        discretization_->t(discretization_->tIEnd(), j) = settings_.dirichletBcRightT;
+    }
+}
+/**
+ * Compute the temperature, T, from the velocities, u,v
+ */
+void Computation::computeTemperature()
+{
+    for (int i = discretization_->tIBegin() + 1; i < discretization_->tIEnd(); i++)
+    {
+        for (int j = discretization_->tJBegin() + 1; j < discretization_->tJEnd(); j++)
+        {
+            double diffusionTerms = (1 / (settings_.re * settings_.pr)) * (discretization_->computeD2tDx2(i, j) + discretization_->computeD2tDy2(i, j));
+            double convectionTerms = discretization_->computeDutDx(i, j) + discretization_->computeDvtDy(i, j);
+
+            discretization_->t(i, j) = discretization_->t(i, j) + dt_ * (diffusionTerms - convectionTerms);
+        }
+    }
 }
 
 /**
@@ -401,8 +438,16 @@ void Computation::computeTemperature()
  */
 void Computation::computePreliminaryVelocities()
 {
+    int offsetRight = discretization_->getOffsetRight();
+    // if (partitioning_->ownPartitionContainsRightBoundary()){return 0;}
+    // return 1;
+
+    int offsetTop = discretization_->getOffsetTop();
+    // if (partitioning_->ownPartitionContainsTopBoundary()){return 0;}
+    // return 1;
+
     // compute preliminary F
-    for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1; i++)
+    for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1 + offsetRight; i++)
     {
         for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd(); j++)
         {
@@ -413,13 +458,14 @@ void Computation::computePreliminaryVelocities()
 
                 discretization_->f(i, j) = discretization_->u(i, j) + dt_ * (diffusionTerms - convectionTerms + settings_.g[0]) - (dt_ * settings_.beta *settings_.g[0] * (discretization_->t(i, j) + discretization_->t(i + 1, j)) / 2);
             }
+
         }
     }
 
     // compute preliminary G
     for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd(); i++)
     {
-        for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1; j++)
+        for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1 + offsetTop; j++)
         {
             if (discretization_->isFluidCell(i,j) && discretization_->isFluidCell(i,j+1))
             {
@@ -438,9 +484,9 @@ void Computation::computePreliminaryVelocities()
  */
 void Computation::computeRightHandSide()
 {
-    for (int i = 1; i < discretization_->rhsSize()[0] - 1; i++)
+    for (int i = 1 ; i < discretization_->rhsSize()[0] - 1; i++) //rhsSize()[0] = nCells_[0] + 2
     {
-        for (int j = 1; j < discretization_->rhsSize()[1] - 1; j++)
+        for (int j = 1 ; j < discretization_->rhsSize()[1] - 1; j++) //rhsSize()[1] = nCells_[1] + 2
         {
             if (discretization_->isInnerFluidCell(i,j))
             {
@@ -466,8 +512,16 @@ void Computation::computePressure()
  */
 void Computation::computeVelocities()
 {
+    int offsetRight = discretization_->getOffsetRight();
+    // if (partitioning_->ownPartitionContainsRightBoundary()){return 0;}
+    // return 1;
+
+    int offsetTop = discretization_->getOffsetTop();
+    // if (partitioning_->ownPartitionContainsTopBoundary()){return 0;}
+    // return 1;
+
     // compute final u
-    for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1; i++)
+    for (int i = discretization_->uIBegin() + 1; i < discretization_->uIEnd() - 1 + offsetRight; i++)
     {
         for (int j = discretization_->uJBegin() + 1; j < discretization_->uJEnd(); j++)
         {
@@ -481,7 +535,7 @@ void Computation::computeVelocities()
     // compute final v
     for (int i = discretization_->vIBegin() + 1; i < discretization_->vIEnd(); i++)
     {
-        for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1; j++)
+        for (int j = discretization_->vJBegin() + 1; j < discretization_->vJEnd() - 1 + offsetTop; j++)
         {
             if (discretization_->isFluidCell(i,j) && discretization_->isFluidCell(i,j+1))
             {

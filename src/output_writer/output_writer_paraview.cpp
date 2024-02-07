@@ -15,6 +15,7 @@ void OutputWriterParaview::writeFile(double currentTime)
 {
   // Assemble the filename
   std::stringstream fileName;
+  std::cout << "Writing file " << fileNo_ << std::endl;
   fileName << "out/output_" << std::setw(4) << setfill('0') << fileNo_ << "." << vtkWriter_->GetDefaultFileExtension();
   
   // increment file no.
@@ -69,7 +70,6 @@ void OutputWriterParaview::writeFile(double currentTime)
   // add the field variable to the data set
   dataSet->GetPointData()->AddArray(arrayPressure);
 
-
   // add marker field variable
   // ---------------------------
   vtkSmartPointer<vtkDoubleArray> arrayMarker = vtkDoubleArray::New();
@@ -108,6 +108,7 @@ void OutputWriterParaview::writeFile(double currentTime)
   // Set the number of temperature values and allocate memory for it. We already know the number, it has to be the same as there are nodes in the mesh.
   arrayTemperature->SetNumberOfTuples(dataSet->GetNumberOfPoints());
 
+  
   arrayTemperature->SetName("temperature");
 
   // loop over the nodes of the mesh and assign the interpolated p values in the vtk data structure
@@ -130,7 +131,6 @@ void OutputWriterParaview::writeFile(double currentTime)
 
   // add the field variable to the data set
   dataSet->GetPointData()->AddArray(arrayTemperature);
-
 
   // add velocity field variable
   // ---------------------------

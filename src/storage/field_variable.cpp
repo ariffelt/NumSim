@@ -1,6 +1,7 @@
-#include "storage/fieldvariable.h"
+#include "storage/field_variable.h"
 
 #include <cassert>
+#include <vector>
 
 /**
  * Constructor
@@ -57,4 +58,21 @@ double FieldVariable::interpolateAt(double x, double y) const
     double interpolation = (1.0 - relativeY) * bottom + relativeY * top;
 
     return interpolation;
+}
+
+/**
+ * set all values to zero
+ */
+void FieldVariable::setToZero()
+{
+    data_.resize(size_[0] * size_[1], 0.0);
+}
+
+/**
+ * get the data of the array
+ * return data in a vector
+ */
+double* FieldVariable::data()
+{
+    return data_.data();
 }
