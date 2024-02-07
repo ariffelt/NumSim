@@ -7,6 +7,7 @@
 #include "pressure_solver/pressure_solver.h"
 #include "output_writer/output_writer_paraview.h"
 #include "output_writer/output_writer_text.h"
+// #include "freeflow/virtualparticle.h"
 
 class Computation
 {
@@ -20,6 +21,8 @@ public:
 
     //! test the implementation of boundary conditions
     void testBC();
+    //! set the boundary markers for the cells
+    void setBoundaryMarkers();
 
 protected:
     //! compute the time step width dt from maximum velocities
@@ -40,7 +43,78 @@ protected:
     //! compute the new velocities, u,v, from the preliminary velocities, F,G and the pressure, p
     void computeVelocities();
 
-    //! compute the new temperature, t, from the old temperature, t_old, and the velocities, u,v
+    void generateVirtualParticles();
+
+    void computeParticleVelocities();
+
+    void generateDam(int noParticles);
+
+    void generateFountain(int noParticles, int noParticlesFountain);
+
+    void generateFountainWithTemp(int noParticles, int noParticlesFountain);
+
+    void generateFountainWithTempUp(int noParticles, int noParticlesFountain);
+
+    void setFountainVelocity();
+
+    void setFountainTemperature();
+
+    void setFountainTemperatureUp();
+
+    void generateFull(int noParticles);
+
+    void generateBox(int noParticles);
+
+    void generateDrop(int noParticles);
+
+    void generateBigDrop(int noParticles);
+
+    void generateBar(int noParticles);
+
+    void generateDropInWater(int noParticles);  
+
+    // void updateCellTypes();
+
+    void updateMarkerField();
+
+    void freeflowBC();
+
+    void bottomWallBC(int i, int j);
+
+    void leftWallBC(int i, int j);
+
+    void bottomLeftCornerBC(int i, int j);
+
+    void topWallBC(int i, int j);
+
+    void horizontalPipeBC(int i, int j);
+
+    void topLeftCornerBC(int i, int j);
+
+    void tipFromRightBC(int i, int j);  
+
+    void rightWallBC(int i, int j);
+
+    void bottomRightCornerBC(int i, int j); 
+
+    void verticalPipeBC(int i, int j);
+
+    void tipFromTopBC(int i, int j);
+
+    void topRightCornerBC(int i, int j);
+
+    void tipFromLeftBC(int i, int j);
+
+    void tipFromBottomBC(int i, int j);
+
+    void dropBC(int i, int j);
+
+    void printParticles();
+
+    void resetEmptyEdges();
+
+    //! compute new temperature t from the old temperature t_old and the velocities u and v
+
     void computeTemperature();
 
     Settings settings_;
@@ -58,4 +132,10 @@ protected:
     std::array<double, 2> meshWidth_;
 
     double dt_;
+
+    std::vector<double> particlesX_;
+    std::vector<double> particlesY_;
+
+    bool updateSurfacePs_ = false;
+    bool updateSurfaceVelocities_ = false;
 };

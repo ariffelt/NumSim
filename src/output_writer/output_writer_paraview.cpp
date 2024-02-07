@@ -64,12 +64,38 @@ void OutputWriterParaview::writeFile(double currentTime)
       arrayPressure->SetValue(index, discretization_->p().interpolateAt(x,y));
     }
   }
-
   // now, we should have added as many values as there are points in the vtk data structure
   assert(index == dataSet->GetNumberOfPoints());
 
   // add the field variable to the data set
   dataSet->GetPointData()->AddArray(arrayPressure);
+
+  // add marker field variable
+  // ---------------------------
+  vtkSmartPointer<vtkDoubleArray> arrayMarker = vtkDoubleArray::New();
+
+  arrayMarker -> SetNumberOfComponents(1);
+
+  arrayMarker -> SetNumberOfTuples(dataSet->GetNumberOfPoints());
+
+  arrayMarker -> SetName("marker");
+
+  index = 0;
+  for (int j = 0; j < nCells[1]+1; j++)
+  {
+    for (int i = 0; i < nCells[0]+1; i++, index++)
+    {
+      const double x = i*dx;
+      const double y = j*dy;
+
+      arrayMarker->SetValue(index, discretization_->markerfield(i,j));
+    }
+  }
+
+  assert(index == dataSet->GetNumberOfPoints());
+
+  dataSet->GetPointData()->AddArray(arrayMarker);
+
 
   // add temperature field variable
   // ------------------------------
@@ -81,6 +107,7 @@ void OutputWriterParaview::writeFile(double currentTime)
 
   // Set the number of temperature values and allocate memory for it. We already know the number, it has to be the same as there are nodes in the mesh.
   arrayTemperature->SetNumberOfTuples(dataSet->GetNumberOfPoints());
+
   
   arrayTemperature->SetName("temperature");
 
@@ -104,7 +131,7 @@ void OutputWriterParaview::writeFile(double currentTime)
 
   // add the field variable to the data set
   dataSet->GetPointData()->AddArray(arrayTemperature);
-  
+
   // add velocity field variable
   // ---------------------------
   vtkSmartPointer<vtkDoubleArray> arrayVelocity = vtkDoubleArray::New();

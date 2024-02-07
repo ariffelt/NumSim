@@ -31,7 +31,10 @@ set(PROJECT_FILES
     settings/settings.cpp
 
     storage/array2d.cpp
-    storage/field_variable.cpp
+
+    storage/fieldvariable.cpp
+
+    freeflow/virtualparticle.cpp
 )
 
 add_executable(${PROJECT_NAME} main.cpp ${PROJECT_FILES})
