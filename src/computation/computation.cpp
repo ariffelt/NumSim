@@ -677,8 +677,8 @@ void Computation::computeParticleVelocities()
     // double dy = discretization_->dy();
 
     // // interpolate velocities to the particle positions (do not coincide with velocity grid points)
-    // for (int k = 0; k < particlesX_.size(); k++)
-    // {
+    for (int k = 0; k < particlesX_.size(); k++)
+    {
     //     // compute particle velocity in x direction
 
     //     // index of upper right corner
