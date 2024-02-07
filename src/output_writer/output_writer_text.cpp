@@ -125,6 +125,33 @@ void OutputWriterText::writeFile(double currentTime)
   }
   file << std::endl;
 
+  // write t
+  // ---------
+  // write header lines
+  file << "t (" << discretization_->t().size()[0] << "x" << discretization_->t().size()[1] << "): " << std::endl 
+    << std::string(fieldWidth, ' ') << "|";
+  for (int i = discretization_->tIBegin(); i < discretization_->tIEnd(); i++)
+  {
+    file << std::setw(fieldWidth) << i;
+  }
+  file << std::endl << std::string(fieldWidth*(discretization_->t().size()[0]+2)+1, '-') << std::endl;
+
+  // write p values
+  for (int j = discretization_->tJEnd()-1; j >= discretization_->tJBegin(); j--)
+  {
+    file << std::setw(fieldWidth) << j << "|";
+    for (int i = discretization_->tIBegin(); i < discretization_->tIEnd(); i++)
+    {
+      if (discretization_->t(i,j) < 10e-10){
+        file << std::setw(fieldWidth) << std::setprecision(fieldWidth-6) << 0.0;
+      } else {
+        file << std::setw(fieldWidth) << std::setprecision(fieldWidth-6) << discretization_->t(i,j);
+      }
+    }
+    file << std::endl;
+  }
+  file << std::endl;
+
   // write f
   // ---------
   // write header lines

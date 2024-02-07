@@ -59,3 +59,25 @@ double CentralDifferences::computeDuvDy(int i, int j) const
 
     return ((v_half_step_right * u_half_step_top) - (v_half_step_right_step_down * u_half_step_down)) / dy();
 }
+
+/**
+ * Compute the 1st derivative ∂ (ut) / ∂x
+ */
+double CentralDifferences::computeDutDx(int i, int j) const
+{
+    const double t_half_step_right = (t(i + 1, j) + t(i, j)) / 2.0;
+    const double t_half_step_left = (t(i - 1, j) + t(i, j)) / 2.0;
+
+    return ((u(i,j) * t_half_step_right) - (u(i-1,j) * t_half_step_left)) / dx();
+}
+
+/**
+ * Compute the 1st derivative ∂ (vt) / ∂y
+ */
+double CentralDifferences::computeDvtDy(int i, int j) const
+{
+    const double t_half_step_top = (t(i, j + 1) + t(i, j)) / 2.0;
+    const double t_half_step_bottom = (t(i, j - 1) + t(i, j)) / 2.0;
+
+    return ((v(i,j) * t_half_step_top) - (v(i,j-1) * t_half_step_bottom)) / dy();
+}

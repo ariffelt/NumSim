@@ -28,7 +28,7 @@ void Computation::initialize(int argc, char *argv[])
     // initialize discretization
     if (settings_.useDonorCell)
     {
-        discretization_ = std::make_shared<DonorCell>(settings_.nCells, meshWidth_, settings_.alpha);
+        discretization_ = std::make_shared<DonorCell>(settings_.nCells, meshWidth_, settings_.alpha, settings_.gamma);
     }
     else
     {
@@ -52,6 +52,9 @@ void Computation::initialize(int argc, char *argv[])
 
     // set markers for the fixed boundary conditions
     setBoundaryMarkers();
+
+    // set fountain temperature
+    setFountainTemperature();
 
     // initialize output writers
     outputWriterText_ = std::make_unique<OutputWriterText>(discretization_);
@@ -107,6 +110,8 @@ void Computation::runSimulation()
 
     while (t < settings_.endTime)
     {
+        setFountainVelocity(); // set the velocity of the fountain
+
         applyBoundaryValues(); // set boundary values for u, v, F and G
 
         computeTimeStepWidth();
@@ -116,6 +121,8 @@ void Computation::runSimulation()
         }
         t += dt_;
         std::cout << "t = " << t  << std::endl; // print time and time step width to the console
+
+        computeTemperature(); // compute the temperature t
 
         // only compute preliminary velocities and rhs and solve pressure eq. on inner fluid cells
         
@@ -198,6 +205,7 @@ void Computation::computeTimeStepWidth()
 {
     // compute maximal time step width from diffusion
     double dt_diffusion = (settings_.re / 2) * (pow(discretization_->dx(), 2) * pow(discretization_->dy(), 2)) / (pow(discretization_->dx(), 2) + pow(discretization_->dy(), 2));
+    double dt_diffusion_temp = dt_diffusion * settings_.pr;
 
     double maxU = 0;
     double maxV = 0;
@@ -217,7 +225,8 @@ void Computation::computeTimeStepWidth()
 
     // subtraction of small value to ensure dt smaller and not smaller/equal than required not necessary since we scale with security factor tau < 1
     assert(settings_.tau < 1);
-    dt_ = std::min(settings_.tau * std::min(dt_diffusion, dt_convection), settings_.maximumDt);
+    //dt_ = std::min(settings_.tau * std::min(dt_diffusion, dt_convection), settings_.maximumDt);
+    dt_ = std::min(settings_.tau * std::min(std::min(dt_diffusion, dt_diffusion_temp), dt_convection), settings_.maximumDt);
 }
 
 /**
@@ -344,6 +353,44 @@ void Computation::applyBoundaryValues()
             discretization_->g(discretization_->vIEnd(), j) = discretization_->v(discretization_->vIEnd(), j);
         }
     }
+
+    // set T boundary values for bottom and top first, as for corner cases, the left and right border should be used
+    for (int i = discretization_->tIBegin(); i <= discretization_->tIEnd(); i++)
+    {
+        // T boundary values bottom, assuming inhomogenous Dirichlet conditions
+        discretization_->t(i, discretization_->tJBegin()) = 2.0 * settings_.dirichletBcBottomT - discretization_->t(i, discretization_->tJBegin() + 1);
+        // T boundary values top, assuming inhomogenous Dirichlet conditions
+        discretization_->t(i, discretization_->tJEnd()) = 2.0 * settings_.dirichletBcTopT - discretization_->t(i, discretization_->tJEnd() - 1);
+    }
+
+    // set T boundary values for left and right side
+    for (int j = discretization_->tJBegin(); j <= discretization_->tJEnd(); j++)
+    {
+        // T boundary values left, assuming inhomogenous Dirichlet conditions
+        discretization_->t(discretization_->tIBegin(), j) = 2.0 * settings_.dirichletBcLeftT - discretization_->t(discretization_->tIBegin() + 1, j);
+        // T boundary values right, assuming inhomogenous Dirichlet conditions
+        discretization_->t(discretization_->tIEnd(), j) = 2.0 * settings_.dirichletBcRightT - discretization_->t(discretization_->tIEnd() - 1, j);
+    }
+}
+
+/**
+ * Compute the temperature, T, from the velocities, u,v
+ */
+void Computation::computeTemperature()
+{
+    for (int i = discretization_->tIBegin() + 1; i < discretization_->tIEnd(); i++)
+    {
+        for (int j = discretization_->tJBegin() + 1; j < discretization_->tJEnd(); j++)
+        {
+            if (discretization_->isInnerFluidCell(i,j))
+            {
+                double diffusionTerms = (1 / (settings_.re * settings_.pr)) * (discretization_->computeD2tDx2(i, j) + discretization_->computeD2tDy2(i, j));
+                double convectionTerms = discretization_->computeDutDx(i, j) + discretization_->computeDvtDy(i, j);
+
+                discretization_->t(i, j) = discretization_->t(i, j) + dt_ * (diffusionTerms - convectionTerms + discretization_->q(i, j));
+            }
+        }
+    }
 }
 
 /**
@@ -362,7 +409,7 @@ void Computation::computePreliminaryVelocities()
                 double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2uDx2(i, j) + discretization_->computeD2uDy2(i, j));
                 double convectionTerms = discretization_->computeDu2Dx(i, j) + discretization_->computeDuvDy(i, j);
 
-                discretization_->f(i, j) = discretization_->u(i, j) + dt_ * (diffusionTerms - convectionTerms + settings_.g[0]);
+                discretization_->f(i, j) = discretization_->u(i, j) + dt_ * (diffusionTerms - convectionTerms + settings_.g[0]) - (dt_ * settings_.beta *settings_.g[0] * (discretization_->t(i, j) + discretization_->t(i + 1, j)) / 2);
             }
         }
     }
@@ -377,7 +424,7 @@ void Computation::computePreliminaryVelocities()
                 double diffusionTerms = (1 / settings_.re) * (discretization_->computeD2vDx2(i, j) + discretization_->computeD2vDy2(i, j));
                 double convectionTerms = discretization_->computeDuvDx(i, j) + discretization_->computeDv2Dy(i, j);
 
-                discretization_->g(i, j) = discretization_->v(i, j) + dt_ * (diffusionTerms - convectionTerms + settings_.g[1]);
+                discretization_->g(i, j) = discretization_->v(i, j) + dt_ * (diffusionTerms - convectionTerms + settings_.g[1]) - (dt_ * settings_.beta *settings_.g[1] * (discretization_->t(i, j) + discretization_->t(i, j + 1)) / 2);
                 // std::cout << "computed G for (" << i << ", " << j <<"): " <<discretization_->g(i, j) << std::endl;
             }
         }
@@ -478,6 +525,10 @@ void Computation::generateVirtualParticles()
     {
         generateDropInWater(10);
     }
+    else if(settings_.particelShape =="FOUNTAIN")
+    {
+        generateFountain(10, 100);
+    }
     else
     {
     particlesX_ = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0,1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1,1.1,1.1};	
@@ -505,6 +556,73 @@ void Computation::generateDam(int noParticles)
             }
         }
     }
+}
+
+void Computation::generateFountain(int noParticles, int noParticlesFountain)
+{
+    // Distribute the noParticles equally in a box in the left lower corner of the domain
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
+
+    particlesX_ = {};
+    particlesY_ = {};
+
+    // for (int i=int(settings_.nCells[1]/4); i<int(3*settings_.nCells[1]/4); i++)
+    for (int i=int(0); i<int(settings_.nCells[0]); i++)
+
+    {
+        //for (int j=0; j<int(settings_.nCells[1]); j++)
+        for (int j=0; j<int(settings_.nCells[1])/5; j++)
+        {
+            if ((i <= int(settings_.nCells[0]/2 + 5)) && (i >= int(settings_.nCells[0]/2 - 5)) && (j <= int(settings_.nCells[1]/5)) && (j >= int(settings_.nCells[1]/5 - 6))){
+
+                    for (int k=0; k<noParticlesFountain; k++)
+                    {
+                        particlesX_.push_back(i*dx + k*dx/noParticlesFountain);
+                        particlesY_.push_back(j*dy + k*dy/noParticlesFountain);
+                    }
+                }
+            else {
+                for (int k=0; k<noParticles; k++)
+                {
+                    particlesX_.push_back(i*dx + k*dx/noParticles);
+                    particlesY_.push_back(j*dy + k*dy/noParticles);
+                }
+            }
+        }
+    }
+}
+
+void Computation::setFountainVelocity()
+{
+    discretization_->v(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 2)) = 2;
+    discretization_->v(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 2)) = 2;
+
+    discretization_->v(int(settings_.nCells[0]/2), int(settings_.nCells[1]/5 - 3)) = 2;
+
+    discretization_->v(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 4)) = 2;
+    discretization_->v(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 4)) = 2;
+
+    discretization_->v(int(settings_.nCells[0]/2), int(settings_.nCells[1]/5 - 5)) = 2;
+
+    discretization_->v(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 6)) = 2;
+    discretization_->v(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 6)) = 2;
+}
+
+void Computation::setFountainTemperature()
+{
+    discretization_->q(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 2)) = 2;
+    discretization_->q(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 2)) = 2;
+
+    discretization_->q(int(settings_.nCells[0]/2), int(settings_.nCells[1]/5 - 3)) = 2;
+
+    discretization_->q(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 4)) = 2;
+    discretization_->q(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 4)) = 2;
+
+    discretization_->q(int(settings_.nCells[0]/2), int(settings_.nCells[1]/5 - 5)) = 2;
+
+    discretization_->q(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 6)) = 2;
+    discretization_->q(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 6)) = 2;
 }
 
 void Computation::generateBox(int noParticles)
@@ -874,8 +992,11 @@ void Computation::bottomWallBC(int i, int j)
 
     if (updateSurfacePs_)
     {
-    // normal stress
+        // normal stress
         discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->v(i,j) - discretization_->v(i,j-1)) / discretization_->dy();
+
+        //temperature
+        discretization_->t(i,j) = 0.0;
     }
 }
 
@@ -902,6 +1023,8 @@ void Computation::leftWallBC(int i, int j)
     {
         discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->u(i,j) - discretization_->u(i-1,j)) / discretization_->dx();
 
+        //temperature
+        discretization_->t(i,j) = 0.0;
     }
 }   
 
@@ -930,6 +1053,9 @@ void Computation::bottomLeftCornerBC(int i, int j)
     {
         discretization_->p(i,j) = 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j+1) + discretization_->u(i-1,j+1) - discretization_->u(i,j) - discretization_->u(i-1,j)) / (discretization_->dy()) +
                                                              (discretization_->v(i+1,j) + discretization_->v(i+1,j-1) - discretization_->v(i,j) - discretization_->v(i,j-1)) / (discretization_->dx()));
+        
+        //temperature   
+        discretization_->t(i,j) = 0.0;
     }
     // std::cout << "\n USING VALUES: v(i,j)-,v(i+1,j)+,v(i+1,j-1)+,v(i,j-1)-:"<< discretization_->v(i,j) << ", " << discretization_->v(i+1,j) << ", " << discretization_->v(i+1,j-1) << ", " << discretization_->v(i,j-1) << std::endl;
 }
@@ -957,6 +1083,9 @@ void Computation::topWallBC(int i, int j)
     if (updateSurfacePs_)
     {
         discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->v(i,j) - discretization_->v(i,j-1)) / discretization_->dy();
+
+        //temperature
+        discretization_->t(i,j) = 0.0;
     }
 }
 
@@ -988,6 +1117,9 @@ void Computation::horizontalPipeBC(int i, int j)
     if (updateSurfacePs_)
     {
         discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->v(i,j) - discretization_->v(i-1,j)) / discretization_->dy();
+
+        //temperature
+        discretization_->t(i,j) = 0.0;
     }
 }
 
@@ -1022,6 +1154,9 @@ void Computation::topLeftCornerBC(int i, int j)
     {
         discretization_->p(i,j) = - 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j) + discretization_->u(i-1,j) - discretization_->u(i,j-1) - discretization_->u(i-1,j-1)) / (discretization_->dy()) +
                                                                 (discretization_->v(i+1,j) + discretization_->v(i+1,j-1) - discretization_->v(i,j) - discretization_->v(i,j-1)) / (discretization_->dx()));
+        
+        //temperature
+        discretization_->t(i,j) = 0.0;
     }
 }
 
@@ -1058,6 +1193,9 @@ void Computation::tipFromRightBC(int i, int j)
     if (updateSurfacePs_)
     {
         discretization_->p(i,j) = 0.0;
+
+        //temperature
+        discretization_->t(i,j) = 0.0;
     }
 }
 
@@ -1083,6 +1221,9 @@ void Computation::rightWallBC(int i, int j)
     {
         // normal stress
         discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->u(i,j) - discretization_->u(i-1,j)) / discretization_->dx();
+
+        //temperature
+        discretization_->t(i,j) = 0.0;
     }
 }
 
@@ -1116,6 +1257,9 @@ void Computation::bottomRightCornerBC(int i, int j)
     if (updateSurfacePs_)
     {
         discretization_->p(i,j) = - 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j+1) + discretization_->u(i-1,j+1) - discretization_->u(i,j) - discretization_->u(i-1,j)) / (discretization_->dy()) + (discretization_->v(i,j) + discretization_->v(i,j-1) - discretization_->v(i-1,j) - discretization_->v(i-1,j-1)) / (discretization_->dx()));
+
+        //temperature
+        discretization_->t(i,j) = 0.0;
     }
 }
 
@@ -1149,6 +1293,9 @@ void Computation::verticalPipeBC(int i, int j)
     if (updateSurfacePs_)
     {
         discretization_->p(i,j) = 2.0 / settings_.re * (discretization_->u(i,j) - discretization_->u(i-1,j)) / discretization_->dx();
+
+        //temperature
+        discretization_->t(i,j) = 0.0;
     }
 }
 
@@ -1185,6 +1332,9 @@ void Computation::tipFromTopBC(int i, int j)
     {
         // normal stress
         discretization_->p(i,j) = 0.0;
+
+        //temperature
+        discretization_->t(i,j) = 0.0;
     }
 }
 
@@ -1223,6 +1373,9 @@ void Computation::topRightCornerBC(int i, int j)
     if (updateSurfacePs_)
     {
         discretization_->p(i,j) = 1.0 / (2.0 * settings_.re) * ((discretization_->u(i,j) + discretization_->u(i-1,j) - discretization_->u(i,j-1) - discretization_->u(i-1,j-1)) / (discretization_->dy()) + (discretization_->v(i,j) + discretization_->v(i,j-1) - discretization_->v(i-1,j) - discretization_->v(i-1,j-1)) / (discretization_->dx()));
+
+        //temperature
+        discretization_->t(i,j) = 0.0;
     }
 }
 
@@ -1269,6 +1422,9 @@ void Computation::tipFromLeftBC(int i, int j)
     if (updateSurfacePs_)
     {
         discretization_->p(i,j) = 0.0;
+
+        //temperature
+        discretization_->t(i,j) = 0.0;
     }
 }
 
@@ -1315,6 +1471,9 @@ void Computation::tipFromBottomBC(int i, int j)
     if (updateSurfacePs_)
     {
         discretization_->p(i,j) = 0.0;
+
+        //temperature
+        discretization_->t(i,j) = 0.0;
     }
 }
 
@@ -1362,6 +1521,9 @@ void Computation::dropBC(int i, int j)
     if (updateSurfacePs_)
     {
         discretization_->p(i,j) = 0.0;
+
+        //temperature
+        discretization_->t(i,j) = 0.0;
     }
 }
 

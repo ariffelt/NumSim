@@ -13,16 +13,22 @@
 // };
 #pragma once
 
+#include "storage/array2d.h"
+
 #include <iostream>
-#include <vector>
+#include <array>
 
-// Define a struct for a particle
-struct Particle {
-    double x, y; // Position
+// Define a class for a particle
+class Particles
+{
+public:
+    //! Constructor to initialize a particle
+    Particles(int noParticles);
 
-    // Default constructor
-    Particle();
+    //! get the position of particle i
+    std::array<double,2> particleI(int i);
 
-    // Constructor to initialize a particle
-    Particle(double initX, double initY);
+protected:
+    int noParticles_; // Number of particles
+    Array2D particlePositions_; // Position of the particles 
 };

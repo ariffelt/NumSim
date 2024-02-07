@@ -14,10 +14,12 @@ StaggeredGrid::StaggeredGrid(std::array<int, 2> nCells, std::array<double, 2> me
                                                                                            u_(uSize(), {0.0, -meshWidth[1] / 2.0}, meshWidth),
                                                                                            v_(vSize(), {-meshWidth[0] / 2.0, 0.0}, meshWidth),
                                                                                            p_(pSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth),
+                                                                                           t_(tSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth),
                                                                                            markerfield_(markerfieldSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth),
                                                                                            rhs_(rhsSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth),
                                                                                            f_(uSize(), {0.0, -meshWidth[1] / 2.0}, meshWidth),
-                                                                                           g_(vSize(), {-meshWidth[0] / 2.0, 0.0}, meshWidth)
+                                                                                           g_(vSize(), {-meshWidth[0] / 2.0, 0.0}, meshWidth),
+                                                                                           q_(tSize(), {-meshWidth[0] / 2.0, -meshWidth[1] / 2.0}, meshWidth)
 {
     assert(nCells[0] > 0);
     assert(nCells[1] > 0);
@@ -63,6 +65,14 @@ const FieldVariable &StaggeredGrid::v() const
 const FieldVariable &StaggeredGrid::p() const
 {
     return p_;
+}
+
+/**
+ * get a reference to field variable t
+ */
+const FieldVariable &StaggeredGrid::t() const
+{
+    return t_;
 }
 
 /**
@@ -114,6 +124,22 @@ double &StaggeredGrid::p(int i, int j)
 }
 
 /**
+ * access value of t in element (i,j)
+ */
+double StaggeredGrid::t(int i, int j) const
+{
+    return t_(i, j);
+}
+
+/**
+ * access value of t in element (x,y)
+ */
+double &StaggeredGrid::t(int i, int j)
+{
+    return t_(i, j);
+}
+
+/**
  * access value of rhs in element (i,j)
 */
 double &StaggeredGrid::rhs(int i, int j)
@@ -151,6 +177,14 @@ double StaggeredGrid::markerfield(int i, int j) const
 double &StaggeredGrid::markerfield(int i, int j)
 {
     return markerfield_(i, j);
+}
+
+/**
+ * access value of Q in element (i,j)
+*/
+double &StaggeredGrid::q(int i, int j)
+{
+    return q_(i, j);
 }
 
 /**
@@ -325,6 +359,46 @@ int StaggeredGrid::markerfieldJEnd() const
  * get the size of markerfield
 */
 std::array<int, 2> StaggeredGrid::markerfieldSize() const
+{
+    return {nCells_[0] + 2, nCells_[1] + 2};
+}
+
+/**
+ * get first valid index for t in x direction
+ */
+int StaggeredGrid::tIBegin() const
+{
+    return 0;
+}
+
+/**
+ * get last valid index for t in x direction
+ */
+int StaggeredGrid::tIEnd() const
+{
+    return nCells_[0] + 1;
+}
+
+/**
+ * get first valid index for t in y direction
+ */
+int StaggeredGrid::tJBegin() const
+{
+    return 0;
+}
+
+/**
+ * get last valid index for t in y direction
+ */
+int StaggeredGrid::tJEnd() const
+{
+    return nCells_[1] + 1;
+}
+
+/**
+ * get the size of t
+ */
+std::array<int, 2> StaggeredGrid::tSize() const
 {
     return {nCells_[0] + 2, nCells_[1] + 2};
 }

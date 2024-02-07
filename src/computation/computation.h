@@ -49,6 +49,12 @@ private:
 
     void generateDam(int noParticles);
 
+    void generateFountain(int noParticles, int noParticlesFountain);
+
+    void setFountainVelocity();
+
+    void setFountainTemperature();
+
     void generateFull(int noParticles);
 
     void generateBox(int noParticles);
@@ -100,9 +106,9 @@ private:
     void printParticles();
 
     void resetEmptyEdges();
-    
 
-
+    //! compute new temperature t from the old temperature t_old and the velocities u and v
+    void computeTemperature();
 
     Settings settings_;
 

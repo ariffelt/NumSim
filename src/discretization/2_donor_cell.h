@@ -8,7 +8,7 @@ class DonorCell : public Discretization
 {
 public:
     //! constructor
-    DonorCell(std::array<int, 2> nCells, std::array<double, 2> meshWidth, double alpha);
+    DonorCell(std::array<int, 2> nCells, std::array<double, 2> meshWidth, double alpha, double gamma);
 
     //! compute the 1st derivative ∂ u^2 / ∂x
     virtual double computeDu2Dx(int i, int j) const;
@@ -22,6 +22,13 @@ public:
     //! compute the 1st derivative ∂ (uv) / ∂y
     virtual double computeDuvDy(int i, int j) const;
 
+    //! compute the 1st derivative ∂ (ut) / ∂x
+    virtual double computeDutDx(int i, int j) const;
+
+    //! compute the 1st derivative ∂ (vt) / ∂y
+    virtual double computeDvtDy(int i, int j) const;
+
 private:
     double alpha_;
+    double gamma_;
 };
