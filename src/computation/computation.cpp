@@ -59,24 +59,6 @@ void Computation::initialize(int argc, char *argv[])
 }
 
 /**
- * Set fixed boundary conditions markers to 2
- */
-void Computation::setBoundaryMarkers()
-{
-    // set markers for the fixed boundary conditions
-    for (int i = 0; i < discretization_->markerfieldSize()[0]; i++)
-    {
-        for (int j = 0; j < discretization_->markerfieldSize()[1]; j++)
-        {
-            if (i == 0 || i == discretization_->markerfieldSize()[0] - 1 || j == 0 || j == discretization_->markerfieldSize()[1] - 1)
-            {
-                discretization_->markerfield(i, j) = 2;
-            }
-        }
-    }
-}
-
-/**
  * Test the boundary conditions by setting the boundary values and writing them out.
  */
 void Computation::testBC()
@@ -96,14 +78,12 @@ void Computation::runSimulation()
     double numberOfPrints = 10.0;                                 // number of prints to the console
     double timestepInterval = settings_.endTime / numberOfPrints; // time interval between two prints
 
-    generateVirtualParticles();
+    generateVirtualParticles(); // generate virtual particles
 
-    updateMarkerField();
+    updateMarkerField(); // update the marker field
 
     outputWriterParaview_->writeFile(t); // output initial state
     outputWriterText_->writeFile(t);
-
-    // std::cout << "updated marker field" << std::endl;
 
     while (t < settings_.endTime)
     {
@@ -116,11 +96,13 @@ void Computation::runSimulation()
 
         applyBoundaryValues(); // set boundary values for u, v, F and G
 
-        computeTimeStepWidth();
+        computeTimeStepWidth(); // compute time step width
+
         if (t + dt_ > settings_.endTime) // decrease time step width in last time step, s.t. the end time will be reached exactly
         {
             dt_ = settings_.endTime - t;
         }
+
         t += dt_;
         std::cout << "t = " << t  << std::endl; // print time and time step width to the console
 
@@ -138,34 +120,22 @@ void Computation::runSimulation()
         
         outputWriterText_->writeFile(t);
 
-        resetEmptyEdges();
+        resetEmptyEdges(); // reset velocities at empty edges
 
         updateSurfacePs_ = false;
         updateSurfaceVelocities_ = true;
 
         freeflowBC(); // apply free flow boundary conditions
 
-        //updateSurfacePs_ = true;
-        //updateSurfaceVelocities_ = false;
-
-        //freeflowBC(); // apply free flow boundary conditions
-
         outputWriterText_->writeFile(t);
 
         applyBoundaryValues(); // set boundary values for u, v, F and G
 
-        std::cout << "vor updateParticleVelocities" << std::endl;
+        computeParticleVelocities(); // compute the new particle positions
 
-        computeParticleVelocities();
+        updateMarkerField(); // update the marker field
 
-        std::cout << "nach updateParticleVelocities" << std::endl;
-
-        updateMarkerField(); 
-
-        std::cout << "nach updateMarkerfield" << std::endl;
-
-        resetEmptyEdges();
-
+        resetEmptyEdges(); // reset velocities at empty edges
 
         updateSurfacePs_ = false;
         updateSurfaceVelocities_ = true;
@@ -177,26 +147,14 @@ void Computation::runSimulation()
 
         freeflowBC(); // apply free flow boundary conditions
 
-        std::cout << "nach freeFlowBC" << std::endl;
-
         outputWriterParaview_->writeFile(t); // output simulation results
         outputWriterText_->writeFile(t);
-
-        std::cout << "nach Outputwriter" << std::endl;
 
         if (t >= timestepInterval)
         {
             std::cout << "t = " << t << ", dt = " << dt_ << std::endl; // print time and time step width to the console
             timestepInterval += settings_.endTime / numberOfPrints;
         }
-    }
-}
-
-void Computation::printParticles()
-{
-    for (int i = 0; i < particlesX_.size(); i++)
-    {
-        std::cout << "\t Particle " << i << " at position (" << particlesX_[i] << ", " << particlesY_[i] << ")" << std::endl;
     }
 }
 
@@ -491,6 +449,8 @@ void Computation::computeVelocities()
     }
 }
 
+//---------------------------------------------------------------------------------------
+
 /**
  * Introduce virtual particles in initial state.
  * Equally distribute them in the whole domain on a finer mesh.
@@ -546,6 +506,9 @@ void Computation::generateVirtualParticles()
     }
 }
 
+/**
+ * Generate virtual particles in the shape of a dam.
+*/
 void Computation::generateDam(int noParticles)
 {
     // Distribute the noParticles equally in a box in the left lower corner of the domain
@@ -568,6 +531,9 @@ void Computation::generateDam(int noParticles)
     }
 }
 
+/**
+ * Generate virtual particles such that a fountain can develop.
+*/
 void Computation::generateFountain(int noParticles, int noParticlesFountain)
 {
     // Distribute the noParticles equally in a box in the left lower corner of the domain
@@ -603,6 +569,10 @@ void Computation::generateFountain(int noParticles, int noParticlesFountain)
     }
 }
 
+/**
+ * Generate virtual particles such that a fountain can develop.
+ * Set fountain temperature.
+*/
 void Computation::generateFountainWithTemp(int noParticles, int noParticlesFountain)
 {
     setFountainTemperature();
@@ -639,9 +609,14 @@ void Computation::generateFountainWithTemp(int noParticles, int noParticlesFount
     }
 }
 
+/**
+ * Generate virtual particles such that a fountain can develop.
+ * Set fountain temperature.
+*/
 void Computation::generateFountainWithTempUp(int noParticles, int noParticlesFountain)
 {
     // Distribute the noParticles equally in a box in the left lower corner of the domain
+    setFountainTemperatureUp();
     double dx = discretization_->dx();
     double dy = discretization_->dy();
 
@@ -674,6 +649,9 @@ void Computation::generateFountainWithTempUp(int noParticles, int noParticlesFou
     }
 }
 
+/**
+ * Set velocity such that a fountain can develop.
+*/
 void Computation::setFountainVelocity()
 {
     discretization_->v(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 2)) = 2;
@@ -690,6 +668,9 @@ void Computation::setFountainVelocity()
     discretization_->v(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 6)) = 2;
 }
 
+/**
+ * Set temperature in fountain.
+*/
 void Computation::setFountainTemperature()
 {
     discretization_->q(int(settings_.nCells[0]/2 - 1), int(settings_.nCells[1]/5 - 2)) = 2;
@@ -706,6 +687,9 @@ void Computation::setFountainTemperature()
     discretization_->q(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 6)) = 2;
 }
 
+/**
+ * Set temperature in fountain.
+*/
 void Computation::setFountainTemperatureUp()
 {
     int maxHeight = 0;
@@ -735,6 +719,9 @@ void Computation::setFountainTemperatureUp()
     // discretization_->q(int(settings_.nCells[0]/2 + 1), int(settings_.nCells[1]/5 - 6)) = 2;
 }
 
+/**
+ * Generate virtual particles in the shape of a box.
+*/
 void Computation::generateBox(int noParticles)
 {
     // Generate a box in the middle of the domain
@@ -757,6 +744,9 @@ void Computation::generateBox(int noParticles)
     }
 }
 
+/**
+ * Generate virtual particles in the shape of a big drop.
+*/
 void Computation::generateBigDrop(int noParticles)
 {
     particlesX_ = {};
@@ -772,6 +762,9 @@ void Computation::generateBigDrop(int noParticles)
     }
 }
 
+/**
+ * Generate virtual particles in the shape of a drop.
+*/
 void Computation::generateDrop(int noParticles)
 {
     // Generate a single particle in the middle of the domain
@@ -782,6 +775,9 @@ void Computation::generateDrop(int noParticles)
     particlesY_.push_back(settings_.nCells[1]/ 2 * discretization_->dy()+discretization_->dy()/2);
 }
 
+/**
+ * Generate virtual particles over the whole domain.
+*/
 void Computation::generateFull(int noParticles)
 {
     // Distribute the noParticles equally in a box in the left lower corner of the domain
@@ -805,7 +801,9 @@ void Computation::generateFull(int noParticles)
     }
 }
 
-
+/**
+ * Generate virtual particles in the shape of a bar at the top of the domain.
+*/
 void Computation::generateBar(int noParticles)
 {
     double dx = discretization_->dx();
@@ -826,6 +824,9 @@ void Computation::generateBar(int noParticles)
     }
 }
 
+/**
+ * Generate virtual particles in the shape of a drop with water below.
+*/
 void Computation::generateDropInWater(int noParticles)
 {
     double dx = discretization_->dx();
@@ -854,9 +855,22 @@ void Computation::generateDropInWater(int noParticles)
         }
     }
 }
+
+//---------------------------------------------------------------------------------------
+
 /**
- * Compute the new particle velocities.
- * And move particles according to these.
+ * Print current particle positions.
+ */
+void Computation::printParticles()
+{
+    for (int i = 0; i < particlesX_.size(); i++)
+    {
+        std::cout << "\t Particle " << i << " at position (" << particlesX_[i] << ", " << particlesY_[i] << ")" << std::endl;
+    }
+}
+
+/**
+ * Compute the new particle positions using implicit Euler with interpolated velocities.
  */
 void Computation::computeParticleVelocities()
 {
@@ -937,6 +951,48 @@ void Computation::updateMarkerField()
         int i = int(particlesX_[k] / discretization_->dx() + 1);
         int j = int(particlesY_[k] / discretization_->dy() + 1);
         discretization_->markerfield(i, j) = 1; // assume cell is fluid    
+    }
+}
+
+/**
+ * Set fixed boundary conditions markers to 2
+ */
+void Computation::setBoundaryMarkers()
+{
+    // set markers for the fixed boundary conditions
+    for (int i = 0; i < discretization_->markerfieldSize()[0]; i++)
+    {
+        for (int j = 0; j < discretization_->markerfieldSize()[1]; j++)
+        {
+            if (i == 0 || i == discretization_->markerfieldSize()[0] - 1 || j == 0 || j == discretization_->markerfieldSize()[1] - 1)
+            {
+                discretization_->markerfield(i, j) = 2;
+            }
+        }
+    }
+}
+
+/**
+ * Reset the empty edges of the velocity field to 0.
+ */
+void Computation::resetEmptyEdges()
+{
+    for (int i = 1; i < discretization_->rhsSize()[0] - 1; i++)
+    {
+        for (int j = 1; j < discretization_->rhsSize()[1] - 1; j++)
+        {
+            if (discretization_->markerfield(i, j) == 0)
+            {
+                if (discretization_->markerfield(i + 1, j) == 0)
+                {
+                    discretization_->u(i, j) = 0;
+                }
+                if (discretization_->markerfield(i, j + 1) == 0)
+                {
+                    discretization_->v(i, j) = 0;
+                }
+            }
+        }
     }
 }
 
@@ -1089,8 +1145,11 @@ void Computation::freeflowBC()
     }
 }
 
+
+// Below: different boundary condition types used in freeflowBC
+
 /**
- * compute the boundary conditions for the bottom wall
+ * Compute the boundary conditions for the bottom wall
  */
 void Computation::bottomWallBC(int i, int j)
 {   
@@ -1119,7 +1178,7 @@ void Computation::bottomWallBC(int i, int j)
 }
 
 /**
- * compute the boundary conditions for the left wall
+ * Compute the boundary conditions for the left wall
  */
 void Computation::leftWallBC(int i, int j)
 {
@@ -1147,7 +1206,7 @@ void Computation::leftWallBC(int i, int j)
 }   
 
 /**
- * compute the boundary conditions for the bottom left corner
+ * Compute the boundary conditions for the bottom left corner
  */
 void Computation::bottomLeftCornerBC(int i, int j)
 {
@@ -1179,7 +1238,7 @@ void Computation::bottomLeftCornerBC(int i, int j)
 }
 
 /**
- * compute the boundary conditions for the top wall
+ * Compute the boundary conditions for the top wall
  */
 void Computation::topWallBC(int i, int j)
 {
@@ -1208,7 +1267,7 @@ void Computation::topWallBC(int i, int j)
 }
 
 /**
- * compute the boundary conditions for the horizontal pipe
+ * Compute the boundary conditions for the horizontal pipe
  */
 void Computation::horizontalPipeBC(int i, int j)
 {
@@ -1242,7 +1301,7 @@ void Computation::horizontalPipeBC(int i, int j)
 }
 
 /**
- * compute the boundary conditions for the top left corner
+ * Compute the boundary conditions for the top left corner
  */
 void Computation::topLeftCornerBC(int i, int j)
 {
@@ -1279,7 +1338,7 @@ void Computation::topLeftCornerBC(int i, int j)
 }
 
 /**
- * compute the boundary conditions for the tip from right
+ * Compute the boundary conditions for the tip from right
  */
 void Computation::tipFromRightBC(int i, int j)
 {
@@ -1318,7 +1377,7 @@ void Computation::tipFromRightBC(int i, int j)
 }
 
 /**
- * compute the boundary conditions for the right wall
+ * Compute the boundary conditions for the right wall
  */
 void Computation::rightWallBC(int i, int j)
 {
@@ -1346,7 +1405,7 @@ void Computation::rightWallBC(int i, int j)
 }
 
 /**
- * compute the boundary conditions for the bottom right corner
+ * Compute the boundary conditions for the bottom right corner
  */
 void Computation::bottomRightCornerBC(int i, int j)
 {
@@ -1381,9 +1440,8 @@ void Computation::bottomRightCornerBC(int i, int j)
     }
 }
 
-
 /**
- * compute the boundary conditions for the vertical pipe
+ * Compute the boundary conditions for the vertical pipe
  */
 void Computation::verticalPipeBC(int i, int j)
 {
@@ -1418,7 +1476,7 @@ void Computation::verticalPipeBC(int i, int j)
 }
 
 /**
- * compute the boundary conditions for the tip from top
+ * Compute the boundary conditions for the tip from top
  */
 void Computation::tipFromTopBC(int i, int j)
 {
@@ -1457,7 +1515,7 @@ void Computation::tipFromTopBC(int i, int j)
 }
 
 /**
- * compute the boundary conditions for the top right corner
+ * Compute the boundary conditions for the top right corner
  */
 void Computation::topRightCornerBC(int i, int j)
 {
@@ -1498,7 +1556,7 @@ void Computation::topRightCornerBC(int i, int j)
 }
 
 /**
- * compute the boundary conditions for the tip from left
+ * Compute the boundary conditions for the tip from left
 */
 void Computation::tipFromLeftBC(int i, int j)
 {
@@ -1547,7 +1605,7 @@ void Computation::tipFromLeftBC(int i, int j)
 }
 
 /*
- * compute the boundary conditions for the tip from bottom
+ * Compute the boundary conditions for the tip from bottom
 */
 void Computation::tipFromBottomBC(int i, int j)
 {
@@ -1596,7 +1654,7 @@ void Computation::tipFromBottomBC(int i, int j)
 }
 
 /*
- * compute the boundary conditions for the drop
+ * Compute the boundary conditions for the drop
 */
 void Computation::dropBC(int i, int j)
 {
@@ -1645,23 +1703,3 @@ void Computation::dropBC(int i, int j)
     }
 }
 
-void Computation::resetEmptyEdges()
-{
-    for (int i = 1; i < discretization_->rhsSize()[0] - 1; i++)
-    {
-        for (int j = 1; j < discretization_->rhsSize()[1] - 1; j++)
-        {
-            if (discretization_->markerfield(i, j) == 0)
-            {
-                if (discretization_->markerfield(i + 1, j) == 0)
-                {
-                    discretization_->u(i, j) = 0;
-                }
-                if (discretization_->markerfield(i, j + 1) == 0)
-                {
-                    discretization_->v(i, j) = 0;
-                }
-            }
-        }
-    }
-}
