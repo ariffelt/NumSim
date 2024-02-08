@@ -555,7 +555,7 @@ void Computation::generateDam(int noParticles)
     particlesX_ = {};
     particlesY_ = {};
 
-    for (int i=int(settings_.nCells[1]/4); i<int(3*settings_.nCells[1]/4); i++)
+    for (int i=int(settings_.nCells[0]/4); i<int(3*settings_.nCells[0]/4); i++)
     {
         for (int j=0; j<int(settings_.nCells[1]) - 3; j++)
         {
@@ -785,6 +785,7 @@ void Computation::generateDrop(int noParticles)
 void Computation::generateFull(int noParticles)
 {
     // Distribute the noParticles equally in a box in the left lower corner of the domain
+
     double dx = discretization_->dx();
     double dy = discretization_->dy();
 
@@ -795,15 +796,18 @@ void Computation::generateFull(int noParticles)
     {
         for (int j=0; j<int(settings_.nCells[1]); j++)
         {
-            particlesX_.push_back(i*dx);
-            particlesY_.push_back(j*dy);
+            for (int k=0; k<noParticles; k++)
+            {
+                particlesX_.push_back(i*dx + k*dx/noParticles);
+                particlesY_.push_back(j*dy + k*dy/noParticles);
+            }
         }
     }
 }
 
+
 void Computation::generateBar(int noParticles)
 {
-
     double dx = discretization_->dx();
     double dy = discretization_->dy();
     particlesX_ = {};
@@ -811,10 +815,14 @@ void Computation::generateBar(int noParticles)
 
     for (int i=0; i<int(settings_.nCells[0]); i++)
     {
-        particlesX_.push_back(i*dx);
-        particlesX_.push_back(i*dx);
-        particlesY_.push_back((settings_.nCells[1]-1)*dy);
-        particlesY_.push_back((settings_.nCells[1]-2)*dy);
+        for (int j=settings_.nCells[1]-2; j<int(settings_.nCells[1]); j++)
+        {
+            for (int k=0; k<noParticles; k++)
+            {
+                particlesX_.push_back(i*dx + k*dx/noParticles);
+                particlesY_.push_back(j*dy + k*dy/noParticles);
+            }
+        }
     }
 }
 
