@@ -99,7 +99,7 @@ void OutputWriterParaview::writeFile(double currentTime)
 
   // add temperature field variable
   // ------------------------------
-  std::cout << "Writing Temperature" << std::endl;
+  // std::cout << "Writing Temperature" << std::endl;
   vtkSmartPointer<vtkDoubleArray> arrayTemperature = vtkDoubleArray::New();
 
   // the temperature is a scalar which means the number of components is 1

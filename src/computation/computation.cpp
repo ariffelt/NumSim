@@ -87,7 +87,10 @@ void Computation::runSimulation()
 
     while (t < settings_.endTime)
     {
-        setFountainVelocity(); // set the velocity of the fountain
+        if (settings_.particelShape =="FOUNTAIN" || settings_.particelShape =="FOUNTAINWITHTEMP" || settings_.particelShape =="FOUNTAINWITHTEMPUP")
+        {
+            setFountainVelocity(); // set the velocity of the fountain
+        }
 
         if (settings_.particelShape =="FOUNTAINWITHTEMPUP")
         {
@@ -473,11 +476,11 @@ void Computation::generateVirtualParticles()
     }
     else if (settings_.particelShape == "DROP")
     {
-        generateDrop(1);
+        generateDrop(10);
     }
     else if (settings_.particelShape == "BIGDROP")
     {
-        generateBigDrop(4);
+        generateBigDrop(10);
     }
     else if (settings_.particelShape == "BAR")
     {
@@ -752,12 +755,18 @@ void Computation::generateBigDrop(int noParticles)
     particlesX_ = {};
     particlesY_ = {};
 
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
+
     for (int i = 0; i<2; i++)
     {
         for (int j = 0; j<2;j++)
         {
-            particlesX_.push_back(settings_.nCells[0]/ 2 * discretization_->dx()+discretization_->dx()/2 - i*discretization_->dx());
-            particlesY_.push_back(settings_.nCells[1]/ 2 * discretization_->dy()+discretization_->dy()/2 - j* discretization_->dy());  
+            for (int k=0; k<noParticles; k++)
+            {
+                particlesX_.push_back(settings_.nCells[0]/ 2 * discretization_->dx()+discretization_->dx()/2 - i*discretization_->dx() + k*dx/noParticles);
+                particlesY_.push_back(settings_.nCells[1]/ 2 * discretization_->dy()+discretization_->dy()/2 - j* discretization_->dy() + k*dy/noParticles);  
+            }
         }
     }
 }
@@ -767,12 +776,18 @@ void Computation::generateBigDrop(int noParticles)
 */
 void Computation::generateDrop(int noParticles)
 {
-    // Generate a single particle in the middle of the domain
+    // Generate a single fluid cell in the middle of the domain
     particlesX_ = {};
     particlesY_ = {};
 
-    particlesX_.push_back(settings_.nCells[0]/ 2 * discretization_->dx()+discretization_->dx()/2);
-    particlesY_.push_back(settings_.nCells[1]/ 2 * discretization_->dy()+discretization_->dy()/2);
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
+
+    for (int k=0; k<noParticles; k++)
+    {
+        particlesX_.push_back(settings_.nCells[0]/ 2 * discretization_->dx()+discretization_->dx()/2 + k*dx/noParticles);
+        particlesY_.push_back(settings_.nCells[1]/ 2 * discretization_->dy()+discretization_->dy()/2 + k*dy/noParticles);
+    } 
 }
 
 /**
@@ -995,6 +1010,8 @@ void Computation::resetEmptyEdges()
         }
     }
 }
+
+//---------------------------------------------------------------------------------------
 
 /**
  * Apply free flow boundary conditions.
